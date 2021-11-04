@@ -1,7 +1,10 @@
 import { expectType } from "tsd";
-import { Result, ok, err, fromThrowable } from "../exports";
+import { ok, err, fromThrowable, Result, TError } from "../exports";
 
 describe("ok", () => {
+  expectType<true>(ok("value").ok);
+  expectType<string>(ok("value").value);
+
   test("with simple value", () => {
     const $ = ok("foobar");
     expect($.ok).toBe(true);
@@ -15,6 +18,9 @@ describe("ok", () => {
 });
 
 describe("err", () => {
+  expectType<false>(err("CODE").ok);
+  expectType<TError<"CODE">>(err("CODE").error);
+
   test("with type only", () => {
     const $ = err("FOOBAR");
     expect($.ok).toBe(false);
