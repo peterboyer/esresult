@@ -10,23 +10,39 @@ $.value // value
 ## `err(TYPE)`
 
 ```typescript
-const $ = err(type);
+const $ = err(ERROR);
 $.ok // false
-$.error // { type }
+$.error // ERROR
+$.is(ERROR) // true
 ```
 
 ## `err(TYPE, options)`
 
 ```typescript
-const $ = err(type, { message?, context? });
-$.error // { type, message?, context? }
+const $ = err(ERROR, { message?, context? });
+$.error // ERROR
+$.message // message?
+$.context // context?
 ```
 
 ## `err(...).by(cause)`
 
 ```typescript
-const $ = err(type, { message?, context? }).by(cause);
-$.error // { type, message?, context?, cause }
+const $ = err(ERROR, { message?, context? }).by(cause);
+$.error // ERROR
+$.message // message?
+$.context // context?
+$.cause // cause
+```
+
+## `err.primitive(Error)`
+
+```typescript
+const $ = err(new TypeError());
+$.ok // false
+$.error // TypeError
+$.is(TypeError.prototype) // true
+$.is(SyntaxError.prototype) // false
 ```
 
 ## `fromThrowable(fn)`
@@ -47,7 +63,7 @@ async function example(...) {
 
 const $result = await example(...);
 if (!$.ok) // $.error = ...
-if ($.is(ERROR)) // $.error = { type: ERROR }
+if ($.is(ERROR)) // $.error = ERROR
 
 $.ok // true
 $.value // VALUE

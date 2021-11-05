@@ -1,33 +1,81 @@
-export interface Ok<VALUE> {
-  ok: true;
+// Monad
+
+export interface Monad<OK extends true | false> {
+  ok: OK;
+  is<ERR, E extends "error" extends keyof ERR ? ERR["error"] : never>(
+    this: ERR,
+    error: E
+  ): boolean;
+}
+
+// Ok
+
+export interface Ok<VALUE> extends Monad<true> {
   value: VALUE;
+  // TODO: Wish I could remove this without breaking .is(...) inference.
+  /** @deprecated @internal */ // ? Hack to strike "error" for intellisense.
+  error?: never;
 }
 
-export function ok<VALUE>(value: VALUE): Ok<VALUE> {
-  return { ok: true, value };
-}
-
-export interface Err<ERROR> {
-  ok: false;
-  error: ERROR;
-}
-
-export type TError<TYPE = string> = {
-  type: TYPE;
-  message?: string;
-  cause?: Error | TError;
-  context?: Record<string, unknown>;
+const Ok: Ok<undefined> = {
+  ok: true,
+  value: undefined,
+  is() {
+    return false;
+  },
 };
 
-export function err<TYPE extends string, OPTIONS extends Omit<TError, "type">>(
-  type: TYPE,
-  options?: OPTIONS
-): Err<TError<TYPE>> {
-  return { ok: false, error: { type, ...options } };
+export function ok<VALUE>(value: VALUE): Ok<VALUE> {
+  return Object.assign(Object.create(Ok) as Ok<VALUE>, { value });
 }
 
-err.unknown = function errUnknown<ERROR>(error: ERROR): Err<ERROR> {
-  return { ok: false, error };
+// Err
+
+export interface Err<
+  ERROR = string,
+  CONTEXT extends object | undefined = object | undefined
+> extends Monad<false> {
+  error: ERROR;
+  context: CONTEXT;
+  cause: Err | Error | undefined;
+  message?: string;
+  because(cause: Err | Error): Err<ERROR, CONTEXT>;
+}
+
+const Err: Err<undefined> = {
+  ok: false,
+  error: undefined,
+  context: undefined,
+  cause: undefined,
+  is(error) {
+    const argError = error;
+    const thisError = (this as unknown as Err<typeof error>).error;
+    if (typeof thisError === "string") return argError === thisError;
+    // If this.error is not a string, it's probably an Error instance.
+    // And Error.prototype would satisfy E extends E["error"], therefore we can
+    //   compare that the given arg (.prototype) is the prototype of this.error.
+    return argError === Object.getPrototypeOf(thisError);
+  },
+  because(cause) {
+    this.cause = cause;
+    return this;
+  },
+};
+
+export function err<
+  ERROR extends string,
+  OPTIONS extends Partial<Err<ERROR>>,
+  CONTEXT extends OPTIONS["context"] = undefined
+>(error: ERROR, options?: OPTIONS): Err<ERROR, CONTEXT> {
+  return Object.assign(
+    Object.create(Err) as Err<ERROR, CONTEXT>,
+    { error },
+    options
+  );
+}
+
+err.primitive = function errPrimitive<ERROR>(error: ERROR): Err<ERROR> {
+  return Object.assign(Object.create(Err) as Err<ERROR>, { error });
 };
 
 export type Result<VALUE = unknown, ERROR = unknown> = Ok<VALUE> | Err<ERROR>;
@@ -35,12 +83,12 @@ export type Result<VALUE = unknown, ERROR = unknown> = Ok<VALUE> | Err<ERROR>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function fromThrowable<FN extends (...args: any[]) => any>(
   fn: FN
-): (...args: Parameters<FN>) => Result<ReturnType<FN>, unknown> {
+): (...args: Parameters<FN>) => Ok<ReturnType<FN>> | Err<unknown> {
   function wrappedFn(...args: Parameters<FN>) {
     try {
       return ok(fn(...args));
     } catch (e) {
-      return err.unknown(e);
+      return err.primitive(e);
     }
   }
   wrappedFn.name = `fromThrowable(${fn.name})`;

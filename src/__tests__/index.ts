@@ -1,5 +1,5 @@
 import { expectType } from "tsd";
-import { ok, err, fromThrowable, Result, TError } from "../exports";
+import { ok, err, fromThrowable, Result } from "../exports";
 
 describe("ok", () => {
   expectType<true>(ok("value").ok);
@@ -15,46 +15,102 @@ describe("ok", () => {
     const $ = ok({ foobar: ["hello", "world"] });
     expect($.ok && $.value).toMatchObject({ foobar: ["hello", "world"] });
   });
+
+  test("with .is(...) error check", () => {
+    const $ = ok({ foobar: ["hello", "world"] });
+    // @ts-expect-error Ensures that .is() returns false on invalid type.
+    expect($.is("ERROR")).toBe(false);
+  });
 });
 
 describe("err", () => {
+  // err.ok must be false
   expectType<false>(err("CODE").ok);
-  expectType<TError<"CODE">>(err("CODE").error);
+  // err.error must match
+  expectType<"CODE">(err("CODE").error);
+  // union of err should union .error attributes
+  expectType<"AAA" | "BBB">([err("AAA").error, err("BBB").error][0]);
+  // err without given context should be undefined
+  expectType<undefined>(err("CCC").context);
+  // err with given context should be correctly assigned/generic
+  expectType<{ a: number }>(err("CCC", { context: { a: 1337 } }).context);
+
+  function fn(z: string) {
+    if (z === "1") return err("AAA");
+    if (z === "2") return err("BBB");
+    if (z === "3") return err.primitive(new TypeError());
+    return ok(z);
+  }
+
+  const $ = fn("1");
+  // function result of union of Ok and Err should intellisense .is(...) to be
+  //   only the union members from .error as argument.
+  if ($.is("AAA")) fn("...");
+  if ($.is("BBB")) fn("...");
+  // @ts-expect-error "CCC" should not be assignable.
+  if ($.is("CCC")) fn("...");
 
   test("with type only", () => {
     const $ = err("FOOBAR");
     expect($.ok).toBe(false);
-    expect(!$.ok && $.error).toMatchObject({ type: "FOOBAR" });
+    expect(!$.ok && $).toMatchObject({ error: "FOOBAR" });
   });
 
   test("with type + message", () => {
     const $ = err("FOOBAR", { message: "Foo required Bar." });
-    expect(!$.ok && $.error).toMatchObject({
-      type: "FOOBAR",
+    expect(!$.ok && $).toMatchObject({
+      error: "FOOBAR",
       message: "Foo required Bar.",
     });
   });
 
   test("with type + cause (with context)", () => {
     const $x = err("FAILED", { context: { foobar: 420 } });
-    const $ = err("FOOBAR", { cause: $x.error });
-    expect(!$.ok && $.error).toMatchObject({
-      type: "FOOBAR",
+    const $ = err("FOOBAR", { cause: $x });
+    expect(!$.ok && $).toMatchObject({
+      error: "FOOBAR",
       cause: {
-        type: "FAILED",
+        error: "FAILED",
         context: { foobar: 420 },
+      },
+    });
+  });
+
+  test("with .is(...) error check", () => {
+    const $ = err("FOOBAR");
+    expect($.is("FOOBAR")).toBe(true);
+    // @ts-expect-error ERROR is not assignable, checking return of false.
+    expect($.is("ERROR")).toBe(false);
+  });
+
+  test("with .is(...) error check with Error type", () => {
+    const $ = err.primitive(new TypeError());
+    expect($.is(TypeError.prototype)).toBe(true);
+    expect($.is(SyntaxError.prototype)).toBe(false);
+  });
+
+  test("with .because(...)", () => {
+    const $x = err("FAILED");
+    const $ = err("FOOBAR").because($x);
+    expect(!$.ok && $).toMatchObject({
+      error: "FOOBAR",
+      cause: {
+        error: "FAILED",
       },
     });
   });
 });
 
-describe("err.unknown", () => {
-  test("with primitive", () => {
-    const $ = err.unknown("foobar");
+describe("err.primitive", () => {
+  expectType<string>(err.primitive("foobar").error);
+  expectType<TypeError>(err.primitive(new TypeError()).error);
+
+  test("with string", () => {
+    const $ = err.primitive("foobar");
     expect(!$.ok && $.error).toBe("foobar");
   });
-  test("with error object", () => {
-    const $ = err.unknown(new TypeError());
+  test("with error", () => {
+    const $ = err.primitive(new TypeError());
     expect(!$.ok && $.error).toMatchObject(new TypeError());
   });
 });
@@ -78,12 +134,12 @@ describe("fromThrowable", () => {
     expect($.ok && $.value).toBe("validinput");
   });
 
-  test("with bad input", () => {
+  test("with invalid input throw 'bad'", () => {
     const $ = safeParse(false);
     expect(!$.ok && $.error).toMatchObject(new TypeError("Bad source."));
   });
 
-  test("with invalid input", () => {
+  test("with invalid input throw 'invalid'", () => {
     const $ = safeParse("@invalidinput");
     expect(!$.ok && $.error).toMatchObject(new TypeError("Invalid source."));
   });

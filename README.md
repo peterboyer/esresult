@@ -54,7 +54,7 @@ async function foo(...) {
   if ($user.is("NOT_FOUND")) return ok(undefined);
 
   // yay: provide a function-domain specific error + ref. of `cause`
-  if (!$user.ok) return err("GET_USER_ERROR").by($user);
+  if (!$user.ok) return err("GET_USER_ERROR").because($user);
 
   // yay: handled the error, now safely use the expected value.
   const user = $user.value;
@@ -140,7 +140,7 @@ function foo(...) {
 
 const $foo = foo(...);
 if ($foo.is( ___ )) ...
-             ^ can only be: "AAA" | "BBB"
+             ^ can only be: "AAA" | "BBB" | undefined
 ```
 
 ## Adding Context/Message Detail
@@ -161,20 +161,22 @@ for (const a of items) {
 }
 ```
 
-## Fallback To Unknown/Unstructured Error
+## Fallback To Primitive/Unstructured Error
 
 If you're unable to use `fromThrowable` to wrap a throwing function, you can
-create an unstructured `err` using anything for it's `error` value.
+create an primitive `err` using anything for its `error` value.
 
 ```typescript
-// unknown/unstructured err
-const $ = err.unknown(new TypeError(...));
+// primitive/unstructured err
+const $ = err.primitive(new TypeError(...));
 $.error // TypeError
 
 // typical err
-const $ = err("TYPE", { message: "My Message.", context: { a: 420 } }).by($...);
-$.error.type // "TYPE"
-$.error.message // "My Message."
-$.error.context.a // 420
-$.error.cause // $...
+const context = { a: 420 };
+const $ = err("TYPE", { message: "My Message.", context }).because($...);
+$.error // "TYPE"
+$.is(TypeError.prototype) // true
+$.message // "My Message."
+$.context.a // 420
+$.cause // $...
 ```
