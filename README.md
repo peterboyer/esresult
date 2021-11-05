@@ -1,5 +1,7 @@
 # terror
 
+[![.github/workflows/ci.yml](https://github.com/armix-io/terror/actions/workflows/ci.yml/badge.svg)](https://github.com/armix-io/terror/actions/workflows/ci.yml)
+
 `terror` (typed-error) is a tiny, zero-dependency, TypeScript-compatible utility
 for better error-handling patterns in your code. `terror` enforces a consistent
 error-handling control-flow by "baking-in" error states as domain-valid return
