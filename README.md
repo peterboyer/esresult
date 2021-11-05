@@ -25,7 +25,7 @@ Heavily inspired by [`neverthrow`](https://www.npmjs.com/package/neverthrow)
 [github](https://github.com/supermacro/neverthrow)) and Rust's
 [`Result`](https://doc.rust-lang.org/std/result/enum.Result.html) type.
 
-# API
+## API
 
 [View API/Examples](./API.md). Proper TypeDocs coming soon.
 
@@ -37,9 +37,9 @@ $ yarn add @armix/terror
 import { ok, err, fromThrowable } from "@armix/terror";
 ```
 
-# Overview
+## Overview
 
-## ✔️ Enjoy this:
+### ✔️ Enjoy this:
 
 ```typescript
 import { ok, err } from "@armix/terror";
@@ -64,7 +64,7 @@ async function foo(...) {
 }
 ```
 
-## ⨯ Not this:
+### 🗑️ Not this:
 
 ```typescript
 // yuck: need to import all errors you wish to handle
@@ -87,10 +87,10 @@ async function foo(...) {
     // yuck: need to define custom error sub-classes at all
     if (e instanceof NotFoundError) return undefined;
 
-    // yuck: unable to pass in the error itself, unless custom
+    // yuck: unable to chain in e, unless custom error class
     if (...) throw new FooError("Unable to get user.");
 
-    // yuck: let foo's caller to suffer try/catch hell instead
+    // yuck: now foo's caller is to suffer try/catch hell
     throw e;
   }
 
@@ -98,7 +98,38 @@ async function foo(...) {
 }
 ```
 
-# Intellisense Support
+## Wrap Unsafe Throwables
+
+```typescript
+// yuck: throwable function
+function fn(...) {
+  if (...) throw new TypeError(...);
+  return result;
+}
+```
+
+### ✔️ Enjoy this:
+
+```typescript
+// yay: safely wrap the throwable
+const safeFn = fromThrowable(fn);
+
+const $result = safeFn(...);
+if (!$result.ok) return err(...).by($result);
+```
+
+### 🗑️ Not this:
+
+```typescript
+// yuck: need to try/catch when calling
+try {
+  fn(...);
+} catch (e) {
+  throw new Error(...);
+}
+```
+
+## Intellisense Support
 
 ```typescript
 function foo(...) {
@@ -112,38 +143,7 @@ if ($foo.is( ___ )) ...
              ^ can only be: "AAA" | "BBB"
 ```
 
-# Safe Throwables
-
-```typescript
-// yuck: throwable function
-function fn(...) {
-  if (...) throw new TypeError(...);
-  return result;
-}
-```
-
-## ✔️ Enjoy this:
-
-```typescript
-// yay: safely wrap the throwable
-const safeFn = fromThrowable(fn);
-
-const $result = safeFn(...);
-if (!$result.ok) return err(...).by($result);
-```
-
-## ⨯ Not this:
-
-```typescript
-// yuck: need to try/catch when calling
-try {
-  fn(...);
-} catch (e) {
-  throw new Error(...);
-}
-```
-
-# Adding Context/Message Detail
+## Adding Context/Message Detail
 
 It is often very useful to store context about what specifically caused an
 error, particularly if an error-chain becomes quite deep or if working with
@@ -161,7 +161,7 @@ for (const a of items) {
 }
 ```
 
-# Fallback To Unknown/Unstructured Error
+## Fallback To Unknown/Unstructured Error
 
 If you're unable to use `fromThrowable` to wrap a throwing function, you can
 create an unstructured `err` using anything for it's `error` value.
