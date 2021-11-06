@@ -29,7 +29,7 @@ Heavily inspired by [`neverthrow`](https://www.npmjs.com/package/neverthrow)
 
 ## API
 
-[View API/Examples](./API.md). Proper TypeDocs coming soon.
+[View Docs/Examples](https://armix-io.github.io/terror/index.html).
 
 ```shell
 $ yarn add @armix/terror
@@ -171,14 +171,7 @@ create an primitive `err` using anything for its `error` value.
 ```typescript
 // primitive/unstructured err
 const $ = err.primitive(new TypeError(...));
-$.error // TypeError
 
-// typical err
-const context = { a: 420 };
-const $ = err("TYPE", { message: "My Message.", context }).because($...);
-$.error // "TYPE"
-$.is(TypeError.prototype) // true
-$.message // "My Message."
-$.context.a // 420
-$.cause // $...
+$.ok      // false
+$.error   // TypeError
 ```

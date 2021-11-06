@@ -10,7 +10,9 @@
   "scripts": {
     "test": "jest",
     "test:ts": "tsc --noEmit",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "docs": "typedoc ./src/index.ts --excludeInternal --disableSources",
+    "dev": "yarn test && yarn test:ts && yarn lint"
   },
   "devDependencies": {
     "@tsconfig/node16": "^1.0.2",
@@ -25,6 +27,7 @@
     "jest": "^27.3.1",
     "prettier": "^2.4.1",
     "tsd": "^0.18.0",
+    "typedoc": "^0.22.7",
     "typescript": "^4.4.4"
   }
 }
