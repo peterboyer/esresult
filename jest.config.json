@@ -1,5 +1,6 @@
 {
   "transform": {
     "^.+\\.tsx?$": "esbuild-jest"
-  }
+  },
+  "testPathIgnorePatterns": ["acceptance"]
 }

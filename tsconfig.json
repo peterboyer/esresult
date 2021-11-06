@@ -1,4 +1,11 @@
 {
   "extends": "@tsconfig/node16/tsconfig.json",
-  "include": ["src"]
+  "compilerOptions": {
+    "baseUrl": "./src",
+    "paths": {
+      "@armix/terror": ["./index.ts"]
+    }
+  },
+  "include": ["src"],
+  "exclude": ["dist"]
 }

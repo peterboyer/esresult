@@ -29,7 +29,7 @@ Heavily inspired by [`neverthrow`](https://www.npmjs.com/package/neverthrow)
 
 ## API
 
-[View Docs/Examples](https://armix-io.github.io/terror/index.html).
+[View Docs/Examples](https://armix-io.github.io/terror/).
 
 ```shell
 $ yarn add @armix/terror

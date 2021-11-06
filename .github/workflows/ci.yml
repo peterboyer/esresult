@@ -2,30 +2,83 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - CHANGELOG.md
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    outputs:
+      src: ${{ steps.filter.outputs.src }}
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
-        with:
-          node-version: "16"
-          cache: "yarn"
-      - run: yarn install --frozen-lockfile
+      - uses: actions/init
       - run: yarn lint
-      - run: yarn test
       - run: yarn test:ts
-  docs:
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - run: yarn test:unit
+      - uses: dorny/paths-filter@v2
+        id: filter
         with:
-          node-version: "16"
-          cache: "yarn"
-      - run: yarn install --frozen-lockfile
+          filters: |
+            src:
+              - 'src/**'
+
+  build:
+    needs: test
+    if: ${{ needs.test.outputs.src == 'true' }}
+    runs-on: ubuntu-latest
+    concurrency:
+      group: build
+      cancel-in-progress: true
+    steps:
+      - uses: actions/init
+      - run: yarn build
+      - run: yarn build:version
+      - uses: actions/upload-artifact@v2
+        with:
+          name: dist
+          path: dist
+
+  acceptance:
+    needs: build
+    runs-on: ubuntu-latest
+    concurrency:
+      group: acceptance
+      cancel-in-progress: true
+    steps:
+      - uses: actions/init
+      - uses: actions/download-artifact@v2
+        with:
+          name: dist
+      - run: yarn test:acceptance
+
+  publish:
+    needs: acceptance
+    runs-on: ubuntu-latest
+    concurrency:
+      group: publish
+      cancel-in-progress: true
+    steps:
+      - uses: actions/init
+      - uses: actions/download-artifact@v2
+        with:
+          name: dist
+      - run: yarn publish dist --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: yarn build:tag
+      - run: yarn changelog
+      - uses: ad-m/github-push-action@master
+        with:
+          tags: true
+
+  docs:
+    needs: publish
+    runs-on: ubuntu-latest
+    concurrency:
+      group: docs
+      cancel-in-progress: true
+    steps:
+      - uses: actions/init
       - run: yarn docs
       - uses: peaceiris/actions-gh-pages@v3
         with:

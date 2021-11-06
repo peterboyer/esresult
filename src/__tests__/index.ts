@@ -21,6 +21,16 @@ describe("ok", () => {
     // @ts-expect-error Ensures that .is() returns false on invalid type.
     expect($.is("ERROR")).toBe(false);
   });
+
+  test("with .or(...) expect value", () => {
+    const $ = ok("value");
+    expect($.or("default")).toBe("value");
+  });
+
+  test("with .orUndefined() expect value", () => {
+    const $ = ok("value");
+    expect($.orUndefined()).toBe("value");
+  });
 });
 
 describe("err", () => {
@@ -34,21 +44,6 @@ describe("err", () => {
   expectType<undefined>(err("CCC").context);
   // err with given context should be correctly assigned/generic
   expectType<{ a: number }>(err("CCC", { context: { a: 1337 } }).context);
-
-  function fn(z: string) {
-    if (z === "1") return err("AAA");
-    if (z === "2") return err("BBB");
-    if (z === "3") return err.primitive(new TypeError());
-    return ok(z);
-  }
-
-  const $ = fn("1");
-  // function result of union of Ok and Err should intellisense .is(...) to be
-  //   only the union members from .error as argument.
-  if ($.is("AAA")) fn("...");
-  if ($.is("BBB")) fn("...");
-  // @ts-expect-error "CCC" should not be assignable.
-  if ($.is("CCC")) fn("...");
 
   test("with type only", () => {
     const $ = err("FOOBAR");
@@ -98,6 +93,64 @@ describe("err", () => {
         error: "FAILED",
       },
     });
+  });
+
+  test("with .or(...) expect default (and type error)", () => {
+    const $ = err("FOOBAR");
+    // @ts-expect-error defaultValue can't be anything but undefined.
+    expect($.or("string")).toBe("string");
+    expect($.or(undefined)).toBeUndefined();
+  });
+
+  test("with .orUndefined() expect undefined", () => {
+    const $ = err("FOOBAR");
+    expect($.orUndefined()).toBeUndefined();
+  });
+});
+
+describe("ok|err union", () => {
+  function fn(z: string) {
+    if (z === "1") return err("AAA");
+    if (z === "2") return err("BBB");
+    if (z === "3") return err.primitive(new TypeError());
+    if (z === "4") return ok(false);
+    return ok(z);
+  }
+
+  const $ = fn("1");
+  // function result of union of Ok and Err should intellisense .is(...) to be
+  //   only the union members from .error as argument.
+  if ($.is("AAA")) fn("...");
+  if ($.is("BBB")) fn("...");
+  // @ts-expect-error "CCC" should not be assignable.
+  if ($.is("CCC")) fn("...");
+
+  // can be string because ok(z -> string)
+  $.or("string");
+  // can be boolean because ok(false -> boolean)
+  $.or(true);
+  // cannot be number because no ok values given
+  // @ts-expect-error 123 should not be assignable.
+  $.or(123);
+
+  test("with .or(...) expect default", () => {
+    const $ = fn("1");
+    expect($.or("string")).toBe("string");
+  });
+
+  test("with .or(...) expect value", () => {
+    const $ = fn("value");
+    expect($.or("string")).toBe("value");
+  });
+
+  test("with .orUndefined() expect undefined", () => {
+    const $ = fn("1");
+    expect($.orUndefined()).toBeUndefined();
+  });
+
+  test("with .orUndefined() expect value", () => {
+    const $ = fn("value");
+    expect($.orUndefined()).toBe("value");
   });
 });
 

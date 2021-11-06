@@ -1,11 +1,21 @@
 // Base
 
-export interface Base<OK extends true | false> {
+export interface Base<OK extends boolean> {
   ok: OK;
-  is<ERR, E extends "error" extends keyof ERR ? ERR["error"] : never>(
-    this: ERR,
-    error: E
+  is<BASE, ERROR extends "error" extends keyof BASE ? BASE["error"] : never>(
+    this: BASE,
+    error: ERROR
   ): boolean;
+  or<BASE, VALUE extends "value" extends keyof BASE ? BASE["value"] : never>(
+    this: BASE,
+    defaultValue: VALUE
+  ): VALUE;
+  orUndefined<
+    BASE,
+    VALUE extends "value" extends keyof BASE ? BASE["value"] : never
+  >(
+    this: BASE
+  ): VALUE | undefined;
 }
 
 // Ok
@@ -27,6 +37,12 @@ const Ok: Ok<undefined> = {
   is() {
     return false;
   },
+  or(value) {
+    return (this as unknown as Ok<typeof value>).value;
+  },
+  orUndefined() {
+    return (this as unknown as Ok<undefined>).value;
+  },
 };
 
 /**
@@ -43,6 +59,8 @@ const Ok: Ok<undefined> = {
  * $.ok // true
  * $.is("INVALID") // false
  * $.value // { my: "value" }
+ * $.or({ my: "default" }) // { my: "value" }
+ * $.orUndefined() // { my: "value" }
  * ```
  */
 
@@ -59,10 +77,17 @@ export interface Err<
   error: ERROR;
   context: CONTEXT;
   cause: Err | Error | undefined;
-  message?: string;
+  message: string | undefined;
   because<CAUSE extends Err<unknown> | Error>(
     cause: CAUSE
   ): Err<ERROR, CONTEXT>;
+  /**
+   * @internal
+   * @deprecated
+   */
+  // ? Hack to strike "error" for intellisense.
+  // TODO: Wish I could remove this without breaking .is(...) union inference.
+  value?: never;
 }
 
 const Err: Err<unknown> = {
@@ -70,6 +95,11 @@ const Err: Err<unknown> = {
   error: undefined,
   context: undefined,
   cause: undefined,
+  message: undefined,
+  because(cause) {
+    this.cause = cause;
+    return this;
+  },
   is(error) {
     const argError = error;
     const thisError = (this as unknown as Err<typeof error>).error;
@@ -79,9 +109,11 @@ const Err: Err<unknown> = {
     //   compare that the given arg (.prototype) is the prototype of this.error.
     return argError === Object.getPrototypeOf(thisError);
   },
-  because(cause) {
-    this.cause = cause;
-    return this;
+  or(value) {
+    return value;
+  },
+  orUndefined() {
+    return undefined;
   },
 };
 
@@ -107,6 +139,8 @@ const Err: Err<unknown> = {
  * $.error // "INVALID"
  * $.message // "Message."
  * $.context // { a: 1 }
+ * $.or("defaultValue") // "defaultValue" (type-error, intended union with Ok)
+ * $.orUndefined() // undefined
  * ```
  */
 
@@ -161,8 +195,11 @@ export type Result<VALUE = unknown, ERROR = unknown> = Ok<VALUE> | Err<ERROR>;
  * ```
  * const safeJSONParse = fromThrowable(JSON.parse);
  *
- * const $ = safeJSONParse("sdkjhvi712364192387fsa");
- * if (!$.ok) // $.error = SyntaxError: Unexpected token s in JSON at ...
+ * const $obj = safeJSONParse("sdkjhvi712364192387fsa");
+ *
+ * if (!$obj.ok) // $obj.error = SyntaxError: Unexpected token s in JSON ...
+ * const obj = $obj.or({ my: { default: "structure" } }); // { my: { ... } }
+ * const objFailed = $obj.orUndefined(); // undefined
  * ```
  */
 
