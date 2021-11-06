@@ -17,6 +17,7 @@ jobs:
       - run: yarn test
       - run: yarn test:ts
   docs:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
