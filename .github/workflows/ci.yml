@@ -8,29 +8,30 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    outputs:
-      src: ${{ steps.filter.outputs.src }}
     steps:
-      - uses: actions/init
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "16"
+          cache: "yarn"
+      - run: yarn install --frozen-lockfile
       - run: yarn lint
       - run: yarn test:ts
       - run: yarn test:unit
-      - uses: dorny/paths-filter@v2
-        id: filter
-        with:
-          filters: |
-            src:
-              - 'src/**'
 
   build:
     needs: test
-    if: ${{ needs.test.outputs.src == 'true' }}
     runs-on: ubuntu-latest
     concurrency:
       group: build
       cancel-in-progress: true
     steps:
-      - uses: actions/init
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "16"
+          cache: "yarn"
+      - run: yarn install --frozen-lockfile
       - run: yarn build
       - run: yarn build:version
       - uses: actions/upload-artifact@v2
@@ -45,7 +46,12 @@ jobs:
       group: acceptance
       cancel-in-progress: true
     steps:
-      - uses: actions/init
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "16"
+          cache: "yarn"
+      - run: yarn install --frozen-lockfile
       - uses: actions/download-artifact@v2
         with:
           name: dist
@@ -58,7 +64,12 @@ jobs:
       group: publish
       cancel-in-progress: true
     steps:
-      - uses: actions/init
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "16"
+          cache: "yarn"
+      - run: yarn install --frozen-lockfile
       - uses: actions/download-artifact@v2
         with:
           name: dist
@@ -78,7 +89,12 @@ jobs:
       group: docs
       cancel-in-progress: true
     steps:
-      - uses: actions/init
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "16"
+          cache: "yarn"
+      - run: yarn install --frozen-lockfile
       - run: yarn docs
       - uses: peaceiris/actions-gh-pages@v3
         with:
