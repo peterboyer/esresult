@@ -25,6 +25,8 @@ jobs:
     concurrency:
       group: build
       cancel-in-progress: true
+    outputs:
+      continue: ${{ steps.version.outputs.continue }}
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
@@ -33,14 +35,17 @@ jobs:
           cache: "yarn"
       - run: yarn install --frozen-lockfile
       - run: yarn build
-      - run: yarn build:version
-      - uses: actions/upload-artifact@v2
+      - id: version
+        run: echo "::set-output name=continue::$(yarn build:version)"
+      - if: ${{ steps.version.outputs.continue == 'continue' }}
+        uses: actions/upload-artifact@v2
         with:
           name: dist
           path: dist
 
   acceptance:
     needs: build
+    if: ${{ needs.build.outputs.continue == 'continue' }}
     runs-on: ubuntu-latest
     concurrency:
       group: acceptance

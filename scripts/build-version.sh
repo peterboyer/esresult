@@ -2,32 +2,32 @@
 
 # get major version from local
 pkgversion=$(dot-json package.json version)
-echo pkg $pkgversion
+# echo pkg $pkgversion
 
 # get latest version after major from npm
 npmversions=$(npm info @armix/terror@\>=$pkgversion version 2>/dev/null)
-echo npm $npmversions
+# echo npm $npmversions
 
 # if no versions, default to first of local major version
 # otherwise parse the npm response for version string
 if [[ -z $npmversions ]]; then
-  echo no versions under major
+  # echo no versions under major
   firstversion=true
   version=$pkgversion
 else
-  echo yes versions under major
+  # echo yes versions under major
   # get last word from versions, remove quotes
   version=$(echo $npmversions | awk '{print $NF}' | tr -d "'")
 fi
 
 # set package.json version to resolved version number before bump
-echo latest $version
+# echo latest $version
 dot-json dist/package.json version $version
 
 # bump if not firstversion
 if [[ -z $firstversion ]]; then
   latesttag=$(git describe --tags --abbrev=0 2>/dev/null)
-  echo latesttag $latesttag
+  # echo latesttag $latesttag
 
   fromsha=$(git rev-parse "$latesttag^0" 2>/dev/null)
   if [[ "$?" != "0" ]]; then
@@ -54,5 +54,10 @@ if [[ -z $firstversion ]]; then
   fi
 fi
 
-echo bumpedversion
-dot-json dist/package.json version
+prevversion=$version
+nextversion=$(dot-json dist/package.json version)
+
+# used in ci as output to determine if to continue artifact test/deploy/etc
+if [[ $prevversion != $nextversion ]]; then
+  echo continue
+fi
