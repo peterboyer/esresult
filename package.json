@@ -4,7 +4,7 @@
   "description": "Terror",
   "main": "index.js",
   "repository": "git@github.com:armix-io/terror.git",
-  "author": "Peter Boyer <8391902+ptboyer@users.noreply.github.com>",
+  "author": "Peter Boyer <github.com/ptboyer>",
   "license": "MIT",
   "private": false,
   "scripts": {
@@ -41,5 +41,13 @@
     "tsd": "^0.18.0",
     "typedoc": "^0.22.7",
     "typescript": "^4.4.4"
-  }
+  },
+  "keywords": [
+    "typed",
+    "error",
+    "handling",
+    "throw",
+    "result",
+    "typescript"
+  ]
 }

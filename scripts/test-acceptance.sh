@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 if [[ ! -d dist ]]; then
   ./scripts/build.sh
 fi

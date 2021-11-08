@@ -77,9 +77,11 @@ jobs:
         with:
           name: dist
           path: dist
-      - run: yarn publish dist --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - uses: JS-DevTools/npm-publish@v1
+        with:
+          token: ${{ secrets.NPM_TOKEN }}
+          package: ./dist/package.json
+          access: public
       - run: yarn build:tag
       - run: yarn changelog
       - uses: ad-m/github-push-action@master

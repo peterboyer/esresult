@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 rm -rf dist \
   && tsc --project tsconfig.build.json \
   && cp package.json yarn.lock dist \
