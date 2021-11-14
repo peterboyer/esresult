@@ -19,6 +19,25 @@ jobs:
       - run: yarn test:ts
       - run: yarn test:unit
 
+  docs:
+    needs: test
+    runs-on: ubuntu-latest
+    concurrency:
+      group: docs
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "16"
+          cache: "yarn"
+      - run: yarn install --frozen-lockfile
+      - run: yarn docs
+      - uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
+
   build:
     needs: test
     runs-on: ubuntu-latest
@@ -63,8 +82,6 @@ jobs:
         with:
           name: dist
           path: dist
-      - run: ls -la
-      - run: cat package.json
       - run: yarn test:acceptance
 
   publish:
@@ -92,26 +109,6 @@ jobs:
           package: ./dist/package.json
           access: public
       - run: yarn build:tag
-      - run: yarn changelog
       - uses: ad-m/github-push-action@master
         with:
           tags: true
-
-  docs:
-    needs: publish
-    runs-on: ubuntu-latest
-    concurrency:
-      group: docs
-      cancel-in-progress: true
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
-        with:
-          node-version: "16"
-          cache: "yarn"
-      - run: yarn install --frozen-lockfile
-      - run: yarn docs
-      - uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs
