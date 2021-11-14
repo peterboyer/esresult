@@ -142,7 +142,7 @@ function foo(...) {
 
 const $foo = foo(...);
 if ($foo.is( ___ )) ...
-             ^ can only be: "AAA" | "BBB" | undefined
+             ^ can only be: "AAA" | "BBB"
 ```
 
 ## Adding Context/Message Detail

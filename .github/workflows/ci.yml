@@ -36,7 +36,7 @@ jobs:
       - run: yarn install --frozen-lockfile
       - run: yarn build
       - id: version
-        run: echo "::set-output name=continue::$(yarn build:version)"
+        run: echo "::set-output name=continue::$(yarn build:version | grep continue)"
       - if: ${{ steps.version.outputs.continue == 'continue' }}
         uses: actions/upload-artifact@v2
         with:
