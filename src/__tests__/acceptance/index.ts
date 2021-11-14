@@ -29,9 +29,21 @@ describe("example", () => {
     });
   });
 
-  it("fromThrowable", () => {
+  test("fromThrowable", () => {
     const safeJSONParse = fromThrowable(JSON.parse);
     const $result = safeJSONParse("hbcdsjkht238471y2341234");
     expect($result.ok).toBe(false);
+  });
+});
+
+import { JSON as tJSON } from "@armix/terror/json";
+
+describe("json", () => {
+  test("parse/stringify", () => {
+    const $parse = tJSON.parse("dfankjn3k12jnk123");
+    expect($parse.ok).toBe(false);
+    const $stringify = tJSON.stringify({ foo: "bar" });
+    expect($stringify.ok).toBe(true);
+    expect($stringify.ok && $stringify.value).toBe('{"foo":"bar"}');
   });
 });

@@ -13,7 +13,7 @@ cleanup() {
 trap "cleanup" EXIT
 
 mkdir -p node_modules/@armix/terror
-cp dist/* node_modules/@armix/terror
+cp -r dist/* node_modules/@armix/terror
 mv package.json package.json.ignore
 mv dist/package.json dist/package.json.ignore
 

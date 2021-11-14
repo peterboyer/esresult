@@ -3,7 +3,8 @@
   "compilerOptions": {
     "baseUrl": "./src",
     "paths": {
-      "@armix/terror": ["./index.ts"]
+      "@armix/terror": ["./index.ts"],
+      "@armix/terror/json": ["./json/index.ts"]
     }
   },
   "include": ["src"],
