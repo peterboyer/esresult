@@ -1,5 +1,5 @@
 import { expectType } from "tsd";
-import { ok } from "./exports";
+import { ok, err, Err } from "./exports";
 
 expectType<true>(ok("value").ok);
 expectType<string>(ok("value").value);
@@ -8,6 +8,7 @@ test("with simple value", () => {
   const $ = ok("foobar");
   expect($.ok).toBe(true);
   expect($.ok && $.value).toBe("foobar");
+  expect($.ok && $.partialErrors).toBeUndefined();
 });
 
 test("with complex value", () => {
@@ -29,4 +30,18 @@ test("with .or(...) expect value", () => {
 test("with .orUndefined() expect value", () => {
   const $ = ok("value");
   expect($.orUndefined()).toBe("value");
+});
+
+test("with partialErrors", () => {
+  const errors = [err("ERR1"), err("ERR2"), err("ERR3")];
+  const $ = ok("value", errors);
+  expect($.ok).toBe(true);
+  expect($.ok && $.value).toBe("value");
+  expect($.ok && $.partialErrors?.length).toBe(3);
+});
+
+test("with partialErrors as empty array", () => {
+  const errors: Err<"ERR">[] = [];
+  const $ = ok("value", errors);
+  expect($.ok && $.partialErrors).toBeUndefined();
 });

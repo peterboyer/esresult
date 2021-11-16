@@ -1,12 +1,24 @@
 import { Base } from "./base";
+import { Err } from "./err";
 
-export class Ok<VALUE = unknown> extends Base<true, VALUE, never> {
-  constructor(value: VALUE) {
+export class Ok<
+  VALUE = unknown,
+  PARTIALERRORS extends Err[] | undefined = undefined
+> extends Base<true, VALUE, never> {
+  #partialErrors?: PARTIALERRORS;
+
+  constructor(value: VALUE, partialErrors?: PARTIALERRORS) {
     super(true, { value });
+    this.#partialErrors = partialErrors;
   }
 
   get value(): this["_value"] {
     return this._value;
+  }
+
+  get partialErrors(): PARTIALERRORS | undefined {
+    if (!this.#partialErrors?.length) return undefined;
+    return this.#partialErrors;
   }
 }
 
@@ -29,6 +41,9 @@ export class Ok<VALUE = unknown> extends Base<true, VALUE, never> {
  * ```
  */
 
-export function ok<VALUE>(value: VALUE): Ok<VALUE> {
-  return new Ok(value);
+export function ok<VALUE, PARTIALERRORS extends Err[] | undefined = undefined>(
+  value: VALUE,
+  partialErrors?: PARTIALERRORS
+): Ok<VALUE, PARTIALERRORS> {
+  return new Ok(value, partialErrors);
 }
