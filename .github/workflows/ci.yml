@@ -9,7 +9,6 @@ on:
       deploy:
         description: "Deploy? (y/N)"
         required: false
-        default: n
 
 jobs:
   test-unit:
