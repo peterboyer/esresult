@@ -2,9 +2,14 @@ on:
   push:
     branches:
       - main
-      - deploy
     paths-ignore:
       - CHANGELOG.md
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: "Deploy? (y/N)"
+        required: false
+        default: n
 
 jobs:
   test-unit:
@@ -68,7 +73,7 @@ jobs:
   deploy:
     name: Deploy
     needs: test-acceptance
-    if: ${{ github.ref == 'refs/heads/deploy' }}
+    if: ${{ github.event.inputs.deploy == 'y' }}
     concurrency:
       group: publish
       cancel-in-progress: true
