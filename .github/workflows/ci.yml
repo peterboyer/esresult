@@ -2,11 +2,13 @@ on:
   push:
     branches:
       - main
+      - deploy
     paths-ignore:
       - CHANGELOG.md
 
 jobs:
-  test:
+  test-unit:
+    name: Unit Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -15,16 +17,18 @@ jobs:
           node-version: "16"
           cache: "yarn"
       - run: yarn install --frozen-lockfile
+
       - run: yarn lint
       - run: yarn test:ts
       - run: yarn test:unit
 
-  docs:
-    needs: test
-    runs-on: ubuntu-latest
+  build:
+    name: Build
+    needs: test-unit
     concurrency:
-      group: docs
+      group: build
       cancel-in-progress: true
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
@@ -32,20 +36,45 @@ jobs:
           node-version: "16"
           cache: "yarn"
       - run: yarn install --frozen-lockfile
-      - run: yarn docs
-      - uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs
 
-  build:
-    needs: test
-    runs-on: ubuntu-latest
+      - run: yarn build
+      - uses: actions/upload-artifact@v2
+        with:
+          name: dist
+          path: dist
+
+  test-acceptance:
+    name: Acceptance Tests
+    needs: build
     concurrency:
-      group: build
+      group: test-acceptance
       cancel-in-progress: true
-    outputs:
-      continue: ${{ steps.version.outputs.continue }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "16"
+          cache: "yarn"
+      - run: yarn install --frozen-lockfile
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: dist
+          path: dist
+
+      - run: yarn test:acceptance
+
+  deploy:
+    name: Deploy
+    needs: test-acceptance
+    if: ${{ github.ref == 'refs/heads/deploy' }}
+    concurrency:
+      group: publish
+      cancel-in-progress: true
+    env:
+      INPUT_TOKEN: ""
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
         with:
@@ -55,60 +84,41 @@ jobs:
           node-version: "16"
           cache: "yarn"
       - run: yarn install --frozen-lockfile
-      - run: yarn build
-      - id: version
-        run: echo "::set-output name=continue::$(yarn build:version | grep continue)"
-      - if: ${{ steps.version.outputs.continue == 'continue' }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: dist
-          path: dist
 
-  acceptance:
-    needs: build
-    if: ${{ needs.build.outputs.continue == 'continue' }}
-    runs-on: ubuntu-latest
-    concurrency:
-      group: acceptance
-      cancel-in-progress: true
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
-        with:
-          node-version: "16"
-          cache: "yarn"
-      - run: yarn install --frozen-lockfile
       - uses: actions/download-artifact@v2
         with:
           name: dist
           path: dist
-      - run: yarn test:acceptance
 
-  publish:
-    needs: acceptance
-    runs-on: ubuntu-latest
-    concurrency:
-      group: publish
-      cancel-in-progress: true
-    env:
-      INPUT_TOKEN: ""
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
-        with:
-          node-version: "16"
-          cache: "yarn"
-      - run: yarn install --frozen-lockfile
-      - uses: actions/download-artifact@v2
-        with:
-          name: dist
-          path: dist
+      - run: yarn build:version
       - uses: JS-DevTools/npm-publish@v1
         with:
           token: ${{ secrets.NPM_TOKEN }}
           package: ./dist/package.json
           access: public
+
       - run: yarn build:tag
       - uses: ad-m/github-push-action@master
         with:
           tags: true
+
+  docs:
+    name: Documentation
+    needs: deploy
+    concurrency:
+      group: docs
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "16"
+          cache: "yarn"
+      - run: yarn install --frozen-lockfile
+
+      - run: yarn docs
+      - uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs

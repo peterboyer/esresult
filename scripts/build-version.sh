@@ -1,71 +1,106 @@
 #!/usr/bin/env bash
 
-# get major version from local
-pkgversion=$(dot-json package.json version)
-pkgname=$(dot-json package.json name)
-echo pkg $pkgversion
+PKG_NAME=$(dot-json package.json name)
+PKG_VERSION_MAJOR=$(dot-json package.json version)
 
-# get latest version after major from npm
-npmversions=$(npm info $pkgname@\>=$pkgversion version 2>/dev/null)
-echo npm $npmversions
+echo "[*] MAJOR: $PKG_VERSION_MAJOR"
 
-# if no versions, default to first of local major version
-# otherwise parse the npm response for version string
-if [[ -z $npmversions ]]; then
-  echo no versions on major
-  firstversion=true
-  version=$pkgversion
+# Get latest version sub-version for major version.
+NPM_VERSIONS=$(npm info $PKG_NAME@\>=$PKG_VERSION_MAJOR version 2>/dev/null)
+
+if [[ -z $NPM_VERSIONS ]]; then
+  echo "[!] No existing deployments found. This is the first deployment!"
+
+  PKG_VERSION_NEXT=$PKG_VERSION_MAJOR
+
 else
-  echo has versions on major
-  # get last word from versions, remove quotes
-  version=$(echo $npmversions | awk '{print $NF}' | tr -d "'")
-fi
+  echo "[!] Existing deployments found."
 
-# set package.json version to resolved version number before bump
-echo latest $version
-dot-json dist/package.json version $version
+  # Get last word from NPM_VERSIONS and remove quotes.
+  NPM_VERSION=$(echo $NPM_VERSIONS | awk '{print $NF}' | tr -d "'")
 
-# bump if not firstversion
-if [[ -z $firstversion ]]; then
-  latesttag=$(git describe --tags --abbrev=0 2>/dev/null)
-  echo latesttag $latesttag
+  # Write the latest existing deployment version to bump from.
+  dot-json dist/package.json version $NPM_VERSION
 
-  fromsha=$(git rev-parse "$latesttag^0" 2>/dev/null)
+  echo "[*] FROM Version: $NPM_VERSION"
+
+  # Get last deployment tag.
+  FROM_TAG=$(git describe --tags --abbrev=0 2>/dev/null)
+
+  # If no tags (failed).
   if [[ "$?" != "0" ]]; then
-    fromsha=""
+    echo "[!] fatal: No tags found, despite having existing deployments!"
+    exit 1
   fi
-  if [[ -z $fromsha ]]; then
-    fromsha=$(git rev-list HEAD | tail -n 1)
+
+  echo "[*] FROM Tag: $FROM_TAG"
+
+  # Assert that $TAG_NAME == v$NPM_VERSION.
+  if [[ "$FROM_TAG" != "v$NPM_VERSION" ]]; then
+    echo "[!] fatal: 'FROM Version' incompatible with 'FROM Tag'!"
+    exit 1
   fi
-  tosha=$(git rev-parse HEAD)
 
-  echo from $fromsha
-  echo to $tosha
+  # Get SHA of deployment tag.
+  FROM_SHA=$(git rev-parse "$FROM_TAG^0" 2>/dev/null)
 
-  # doesn't support (scope)
-  result=$(git log $fromsha..$tosha | grep feat:)
-  if [[ -z $result ]]; then
-    result=$(git log $fromsha..$tosha | grep fix:)
-    if [[ ! -z $result ]]; then
-      bump=patch
+  # If can't get SHA (failed).
+  if [[ "$?" != "0" ]]; then
+    echo "[!] fatal: Unable to get SHA of tag $FROM_TAG!"
+    exit 1
+  fi
+
+  echo "[*] FROM: $FROM_SHA"
+
+  # Get SHA of HEAD.
+  HEAD_SHA=$(git rev-parse HEAD)
+
+  # If can't get SHA (failed).
+  if [[ "$?" != "0" ]]; then
+    echo "[!] fatal: Unable to get SHA of HEAD!"
+    exit 1
+  fi
+
+  echo "[*] HEAD: $HEAD_SHA"
+
+  # TODO: Support 'action(scope):' syntax.
+
+  # Get any matches for 'feat' bump (MINOR).
+  LOG_MATCH=$(git log $FROM_SHA..$HEAD_SHA | grep feat:)
+
+  # If match for MINOR.
+  if [[ -n $LOG_MATCH ]]; then
+    BUMP=minor
+  fi
+
+  # If BUMP not set yet, attempt PATCH.
+  if [[ -z $BUMP ]]; then
+    # Get any matches for 'fix' bump (PATCH).
+    LOG_MATCH=$(git log $FROM_SHA..$HEAD_SHA | grep fix:)
+
+    if [[ -n $LOG_MATCH ]]; then
+      BUMP=patch
     fi
-  else
-    bump=minor
   fi
 
-  echo bump $bump
-
-  if [[ ! -z $bump ]]; then
-    (cd dist && yarn version --$bump --no-git-tag-version)
+  # If BUMP not set yet (failed).
+  if [[ -z $BUMP ]]; then
+    echo "[!] fatal: Found no feat/fix messages for a new version!"
+    exit 1
   fi
-fi
 
-prevversion=$version
-nextversion=$(dot-json dist/package.json version)
+  echo "[*] BUMP: $BUMP"
 
-echo $prevversion vs $nextversion
+  # Apply the new version according to BUMP.
+  (cd dist && yarn version --$BUMP --no-git-tag-version 1>/dev/null)
 
-# used in ci as output to determine if to continue artifact test/deploy/etc
-if [[ $prevversion != $nextversion ]]; then
-  echo continue
+  PKG_VERSION_NEXT=$(dot-json dist/package.json version)
+
+  echo "[!] Version: $NPM_VERSION => $PKG_VERSION_NEXT"
+
+  # If next version is the same as the last/current version.
+  if [[ $PKG_VERSION_NEXT == $NPM_VERSION ]]; then
+    echo "[!] fatal: Attempting to deploy an existing version!"
+    exit 1
+  fi
 fi

@@ -1,6 +1,6 @@
-# terror
+# tError
 
-[![.github/workflows/ci.yml](https://github.com/armix-io/terror/actions/workflows/ci.yml/badge.svg)](https://github.com/armix-io/terror/actions/workflows/ci.yml)
+[![.github/workflows/ci.yml](https://github.com/ptboyer/terror/actions/workflows/ci.yml/badge.svg)](https://github.com/ptboyer/terror/actions/workflows/ci.yml)
 
 `terror` (typed-error) is a tiny, zero-dependency, TypeScript-compatible utility
 for better error-handling patterns in your code. `terror` enforces a consistent
@@ -29,7 +29,7 @@ Heavily inspired by [`neverthrow`](https://www.npmjs.com/package/neverthrow)
 
 ## API
 
-[View Docs/Examples](https://armix-io.github.io/terror/).
+[View Docs/Examples](https://ptboyer.github.io/terror/).
 
 ```shell
 $ yarn add @armix/terror
