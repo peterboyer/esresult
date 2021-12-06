@@ -7,15 +7,21 @@ expectType<false>(err("CODE").ok);
 expectType<"CODE">(err("CODE").error);
 // union of err should union .error attributes
 expectType<"AAA" | "BBB">([err("AAA").error, err("BBB").error][0]);
-// err without given context should be undefined
+// err without given info should be undefined
+expectType<undefined>(err("CCC").info);
 expectType<undefined>(err("CCC").context);
-// err with given context should be correctly assigned/generic
+// err with given info should be correctly assigned/generic
+expectType<{ a: number }>(err("CCC", { info: { a: 1337 } }).info);
 expectType<{ a: number }>(err("CCC", { context: { a: 1337 } }).context);
-// err with later assigned context should be correctly assigned
+// err with later assigned info should be correctly assigned
+expectType<{ a: number }>(err("CCC").$info({ a: 1337 }).info);
 expectType<{ a: number }>(err("CCC").$context({ a: 1337 }).context);
-// err with later assigned context + message should still be correctly assigned
+// err with later assigned info + message should still be correctly assigned
 expectType<{ a: number }>(
-  err("CCC").$context({ a: 1337 }).$message("Something.").context
+  err("CCC").$info({ a: 1337 }).$message("Something.").info
+);
+expectType<{ a: number }>(
+  err("CCC").$info({ a: 1337 }).$message("Something.").context
 );
 
 test("with type only", () => {
@@ -32,14 +38,14 @@ test("with type + message", () => {
   });
 });
 
-test("with type + cause (with context)", () => {
-  const $x = err("FAILED", { context: { foobar: 420 } });
+test("with type + cause (with info)", () => {
+  const $x = err("FAILED", { info: { foobar: 420 } });
   const $ = err("FOOBAR", { cause: $x });
   expect(!$.ok && $).toMatchObject({
     error: "FOOBAR",
     cause: {
       error: "FAILED",
-      context: { foobar: 420 },
+      info: { foobar: 420 },
     },
   });
 });
@@ -68,11 +74,11 @@ test("with .$cause(...)", () => {
   });
 });
 
-test("with .$context(...)", () => {
-  const $ = err("FOOBAR").$context({ foo: "bar", fin: "baz" });
+test("with .$info(...)", () => {
+  const $ = err("FOOBAR").$info({ foo: "bar", fin: "baz" });
   expect(!$.ok && $).toMatchObject({
     error: "FOOBAR",
-    context: {
+    info: {
       foo: "bar",
       fin: "baz",
     },
@@ -87,15 +93,15 @@ test("with .$message(...)", () => {
   });
 });
 
-test("with stacked $context|$message|$cause", () => {
+test("with stacked $info|$message|$cause", () => {
   const $x = err("FAILED");
   const $ = err("FOOBAR")
-    .$context({ foo: "bar", fin: "baz" })
+    .$info({ foo: "bar", fin: "baz" })
     .$message("Something went wrong...")
     .$cause($x);
   expect(!$.ok && $).toMatchObject({
     error: "FOOBAR",
-    context: {
+    info: {
       foo: "bar",
       fin: "baz",
     },
@@ -178,7 +184,25 @@ describe("err.primitive", () => {
   });
 });
 
-describe("deprecateds", () => {
+describe("deprecations", () => {
+  test("with type + context", () => {
+    const $ = err("FOOBAR", { context: { foo: "bar", abc: 123 } });
+    expect(!$.ok && $).toMatchObject({
+      error: "FOOBAR",
+      info: { foo: "bar", abc: 123 },
+      context: { foo: "bar", abc: 123 },
+    });
+  });
+
+  test("with .$context(...)", () => {
+    const $ = err("FOOBAR").$context({ foo: "bar", abc: 123 });
+    expect(!$.ok && $).toMatchObject({
+      error: "FOOBAR",
+      info: { foo: "bar", abc: 123 },
+      context: { foo: "bar", abc: 123 },
+    });
+  });
+
   test("with .because(...)", () => {
     const $x = err("FAILED");
     const $ = err("FOOBAR").because($x);

@@ -4,18 +4,19 @@ import { Base } from "./base";
 
 export class Err<
   ERROR = unknown,
-  CONTEXT extends Record<string, unknown> = Record<string, unknown>
+  INFO extends Record<string, unknown> = Record<string, unknown>
 > extends Base<false, undefined, ERROR> {
   constructor(
     error: ERROR,
     options?: {
-      context?: CONTEXT;
+      info?: INFO;
+      context?: INFO; // deprecated
       cause?: Err | Error;
       message?: string;
     }
   ) {
     super(false, { error });
-    this.context = options?.context as CONTEXT;
+    this.info = (options?.info ?? options?.context) as INFO;
     this.cause = options?.cause;
     this.message = options?.message;
   }
@@ -24,13 +25,35 @@ export class Err<
     return this._error;
   }
 
-  readonly context: CONTEXT;
+  readonly info: INFO;
   readonly cause: Err | Error | undefined = undefined;
   readonly message: string | undefined = undefined;
 
   /**
-   * Add/update the `Err`'s `context`.
+   * @deprecated Use `.info` instead.
+   */
+  get context(): INFO {
+    return this.info;
+  }
+
+  /**
+   * Add/update the `Err`'s `info`.
    *
+   * @param info A `Record` of attributes for this `Err`.
+   * @returns A new `Err` with previous values + given `info`.
+   */
+  $info<INFO extends Record<string, unknown>>(info: INFO): Err<ERROR, INFO> {
+    return new Err(this._error, {
+      ...this,
+      info,
+      context: info,
+    });
+  }
+
+  /**
+   * Add/update the `Err`'s `info` (formerly `context`).
+   *
+   * @deprecated
    * @param context A `Record` of attributes for this `Err`.
    * @returns A new `Err` with previous values + given `context`.
    */
@@ -39,6 +62,7 @@ export class Err<
   ): Err<ERROR, CONTEXT> {
     return new Err(this._error, {
       ...this,
+      info: context,
       context,
     });
   }
@@ -49,7 +73,7 @@ export class Err<
    * @param cause An `Err` or `Error` object.
    * @returns A new `Err` with previous values + given `cause`.
    */
-  $cause(cause: Err | Error | undefined): Err<ERROR, CONTEXT> {
+  $cause(cause: Err | Error | undefined): Err<ERROR, INFO> {
     return new Err(this._error, {
       ...this,
       cause,
@@ -62,7 +86,7 @@ export class Err<
    * @param message A `string` message.
    * @returns A new `Err` with previous values + given `message`.
    */
-  $message(message: string): Err<ERROR, CONTEXT> {
+  $message(message: string): Err<ERROR, INFO> {
     return new Err(this._error, {
       ...this,
       message,
@@ -76,7 +100,7 @@ export class Err<
    * @param cause An `Err` or `Error` object.
    * @returns A new `Err` with previous values + given `source`.
    */
-  because(cause: Err | Error | undefined): Err<ERROR, CONTEXT> {
+  because(cause: Err | Error | undefined): Err<ERROR, INFO> {
     return new Err(this._error, {
       ...this,
       cause,
@@ -97,9 +121,13 @@ export class Err<
  * ```
  * const $ = err("INVALID");
  * const $ = err("INVALID", {});
- * const $ = err("INVALID", { message: "Message.", context: { a: 1 } });
+ * const $ = err("INVALID", { message: "Message.", info: { a: 1 } });
  * const $ = err("INVALID").$cause($previous);
  * const $ = err("INVALID", { cause: $previous });
+ * return err("INVALID")
+ *   .$cause($previous)
+ *   .$info({ a: 1 })
+ *   .$message("Something went wrong.");
  *
  * $.ok // false
  * $.is("INVALID") // true
@@ -113,10 +141,15 @@ export class Err<
 
 export function err<
   ERROR extends string,
-  CONTEXT extends Record<string, unknown> = never
+  INFO extends Record<string, unknown> = never
 >(
   error: ERROR,
-  options?: { context?: CONTEXT; cause?: Err | Error; message?: string }
+  options?: {
+    info?: INFO;
+    context?: INFO;
+    cause?: Err | Error;
+    message?: string;
+  }
 ) {
   return new Err(error, options);
 }

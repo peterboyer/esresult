@@ -154,12 +154,11 @@ iterable data.
 ```typescript
 for (const a of items) {
   if (...)
-    return err("BAD_FORMAT", {
+    return err("BAD_FORMAT")
       // yay: add a detailed message without sacrificing an error code/type
-      message: "Item excepts a strict of only uppercase letters",
+      .$message("Item excepts a strict of only uppercase letters")
       // yay: add information about the failing iteration
-      context: { a },
-    })
+      .$info({ a });
 }
 ```
 
