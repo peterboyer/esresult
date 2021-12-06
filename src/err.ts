@@ -8,7 +8,11 @@ export class Err<
 > extends Base<false, undefined, ERROR> {
   constructor(
     error: ERROR,
-    options?: { context?: CONTEXT; cause?: Err | Error; message?: string }
+    options?: {
+      context?: CONTEXT;
+      cause?: Err | Error;
+      message?: string;
+    }
   ) {
     super(false, { error });
     this.context = options?.context as CONTEXT;
@@ -24,18 +28,65 @@ export class Err<
   readonly cause: Err | Error | undefined = undefined;
   readonly message: string | undefined = undefined;
 
+  /**
+   * Add/update the `Err`'s `context`.
+   *
+   * @param context A `Record` of attributes for this `Err`.
+   * @returns A new `Err` with previous values + given `context`.
+   */
+  $context<CONTEXT extends Record<string, unknown>>(
+    context: CONTEXT
+  ): Err<ERROR, CONTEXT> {
+    return new Err(this._error, {
+      ...this,
+      context,
+    });
+  }
+
+  /**
+   * Add/update the `Err`'s `cause`.
+   *
+   * @param cause An `Err` or `Error` object.
+   * @returns A new `Err` with previous values + given `cause`.
+   */
+  $cause(cause: Err | Error | undefined): Err<ERROR, CONTEXT> {
+    return new Err(this._error, {
+      ...this,
+      cause,
+    });
+  }
+
+  /**
+   * Add/update the `Err`'s `message`.
+   *
+   * @param message A `string` message.
+   * @returns A new `Err` with previous values + given `message`.
+   */
+  $message(message: string): Err<ERROR, CONTEXT> {
+    return new Err(this._error, {
+      ...this,
+      message,
+    });
+  }
+
+  /**
+   * Add/update the `Err`'s `source` (formerly `cause`).
+   *
+   * @deprecated Use `.$cause` instead.
+   * @param cause An `Err` or `Error` object.
+   * @returns A new `Err` with previous values + given `source`.
+   */
   because(cause: Err | Error | undefined): Err<ERROR, CONTEXT> {
     return new Err(this._error, {
+      ...this,
       cause,
-      context: this.context,
-      message: this.message,
     });
   }
 }
 
 /**
  * Creates a new `Err` object with given error string and optional properties.
- * You will often use `err(...).because(...)` to create an error chain that is
+ * You will often use `err(...).$cause(...)` to create an error chain that is
  * useful for debugging, error-reporting, and/or control-flow.
  *
  * @param error An error string that may be used to discriminate error types.
@@ -47,7 +98,7 @@ export class Err<
  * const $ = err("INVALID");
  * const $ = err("INVALID", {});
  * const $ = err("INVALID", { message: "Message.", context: { a: 1 } });
- * const $ = err("INVALID").because($previous);
+ * const $ = err("INVALID").$cause($previous);
  * const $ = err("INVALID", { cause: $previous });
  *
  * $.ok // false

@@ -11,6 +11,12 @@ expectType<"AAA" | "BBB">([err("AAA").error, err("BBB").error][0]);
 expectType<undefined>(err("CCC").context);
 // err with given context should be correctly assigned/generic
 expectType<{ a: number }>(err("CCC", { context: { a: 1337 } }).context);
+// err with later assigned context should be correctly assigned
+expectType<{ a: number }>(err("CCC").$context({ a: 1337 }).context);
+// err with later assigned context + message should still be correctly assigned
+expectType<{ a: number }>(
+  err("CCC").$context({ a: 1337 }).$message("Something.").context
+);
 
 test("with type only", () => {
   const $ = err("FOOBAR");
@@ -51,14 +57,52 @@ test("with .is(...) error check with Error type", () => {
   expect($.is(SyntaxError.prototype)).toBe(false);
 });
 
-test("with .because(...)", () => {
+test("with .$cause(...)", () => {
   const $x = err("FAILED");
-  const $ = err("FOOBAR").because($x);
+  const $ = err("FOOBAR").$cause($x);
   expect(!$.ok && $).toMatchObject({
     error: "FOOBAR",
     cause: {
       error: "FAILED",
     },
+  });
+});
+
+test("with .$context(...)", () => {
+  const $ = err("FOOBAR").$context({ foo: "bar", fin: "baz" });
+  expect(!$.ok && $).toMatchObject({
+    error: "FOOBAR",
+    context: {
+      foo: "bar",
+      fin: "baz",
+    },
+  });
+});
+
+test("with .$message(...)", () => {
+  const $ = err("FOOBAR").$message("My error message.");
+  expect(!$.ok && $).toMatchObject({
+    error: "FOOBAR",
+    message: "My error message.",
+  });
+});
+
+test("with stacked $context|$message|$cause", () => {
+  const $x = err("FAILED");
+  const $ = err("FOOBAR")
+    .$context({ foo: "bar", fin: "baz" })
+    .$message("Something went wrong...")
+    .$cause($x);
+  expect(!$.ok && $).toMatchObject({
+    error: "FOOBAR",
+    context: {
+      foo: "bar",
+      fin: "baz",
+    },
+    cause: {
+      error: "FAILED",
+    },
+    message: "Something went wrong...",
   });
 });
 
@@ -131,5 +175,18 @@ describe("err.primitive", () => {
   test("with error", () => {
     const $ = err.primitive(new TypeError());
     expect(!$.ok && $.error).toMatchObject(new TypeError());
+  });
+});
+
+describe("deprecateds", () => {
+  test("with .because(...)", () => {
+    const $x = err("FAILED");
+    const $ = err("FOOBAR").because($x);
+    expect(!$.ok && $).toMatchObject({
+      error: "FOOBAR",
+      cause: {
+        error: "FAILED",
+      },
+    });
   });
 });
