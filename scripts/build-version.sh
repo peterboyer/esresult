@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# TAG= env variable not-empty, then git tag with version.
+TAG=$(env | grep TAG)
+
 PKG_NAME=$(dot-json package.json name)
 PKG_VERSION_MAJOR=$(dot-json package.json version)
 
@@ -63,10 +66,8 @@ else
 
   echo "[*] HEAD: $HEAD_SHA"
 
-  # TODO: Support 'action(scope):' syntax.
-
   # Get any matches for 'feat' bump (MINOR).
-  LOG_MATCH=$(git log $FROM_SHA..$HEAD_SHA | grep feat:)
+  LOG_MATCH=$(git log $FROM_SHA..$HEAD_SHA --oneline | grep -E "^(\w)* feat(:|\()")
 
   # If match for MINOR.
   if [[ -n $LOG_MATCH ]]; then
@@ -76,7 +77,7 @@ else
   # If BUMP not set yet, attempt PATCH.
   if [[ -z $BUMP ]]; then
     # Get any matches for 'fix' bump (PATCH).
-    LOG_MATCH=$(git log $FROM_SHA..$HEAD_SHA | grep fix:)
+    LOG_MATCH=$(git log $FROM_SHA..$HEAD_SHA --oneline | grep -E "^(\w)* fix(:|\()")
 
     if [[ -n $LOG_MATCH ]]; then
       BUMP=patch
@@ -103,4 +104,11 @@ else
     echo "[!] fatal: Attempting to deploy an existing version!"
     exit 1
   fi
+fi
+
+# Tag repo with vVERSION tag on commit.
+if [[ -n $TAG ]]; then
+  GIT_TAG=v$PKG_VERSION_NEXT
+  git tag $GIT_TAG
+  echo "[*] Tagged: $PKG_VERSION_NEXT"
 fi

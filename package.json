@@ -17,7 +17,6 @@
     "lint": "eslint src",
     "build": "./scripts/build.sh",
     "build:version": "./scripts/build-version.sh",
-    "build:tag": "./scripts/build-tag.sh",
     "docs": "typedoc ./src/index.ts --excludeInternal --disableSources",
     "changelog": "./scripts/changelog.sh"
   },
