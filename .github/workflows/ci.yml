@@ -32,10 +32,6 @@ jobs:
 
   build:
     name: Build
-    needs: test-unit
-    concurrency:
-      group: build
-      cancel-in-progress: true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -53,10 +49,7 @@ jobs:
 
   test-acceptance:
     name: Acceptance Tests
-    needs: build
-    concurrency:
-      group: test-acceptance
-      cancel-in-progress: true
+    needs: [test-unit, build]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
