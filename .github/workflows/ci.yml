@@ -93,7 +93,7 @@ jobs:
           name: dist
           path: dist
 
-      - run: yarn build:version
+      - run: TAG= yarn build:version
 
       - uses: JS-DevTools/npm-publish@v1
         with:
