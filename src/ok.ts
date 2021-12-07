@@ -1,9 +1,9 @@
 import { Base } from "./base";
-import { Err } from "./err";
+import { ErrAny } from "./err";
 
 export class Ok<
   VALUE = unknown,
-  PARTIALERRORS extends Err[] | undefined = undefined
+  PARTIALERRORS extends ErrAny[] | undefined = undefined
 > extends Base<true, VALUE, never> {
   #partialErrors?: PARTIALERRORS;
 
@@ -41,9 +41,9 @@ export class Ok<
  * ```
  */
 
-export function ok<VALUE, PARTIALERRORS extends Err[] | undefined = undefined>(
-  value: VALUE,
-  partialErrors?: PARTIALERRORS
-): Ok<VALUE, PARTIALERRORS> {
+export function ok<
+  VALUE,
+  PARTIALERRORS extends ErrAny[] | undefined = undefined
+>(value: VALUE, partialErrors?: PARTIALERRORS): Ok<VALUE, PARTIALERRORS> {
   return new Ok(value, partialErrors);
 }

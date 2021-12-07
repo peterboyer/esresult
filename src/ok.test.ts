@@ -3,6 +3,14 @@ import { ok, err, Err } from "./exports";
 
 expectType<true>(ok("value").ok);
 expectType<string>(ok("value").value);
+// to be okay with partial errors with INFOs as interfaces
+interface MyInterface {
+  foo: string;
+}
+expectType<Err<string, MyInterface>[] | undefined>(
+  ok("value", [err("MY_ERROR").$info({ foo: "bar" } as MyInterface)])
+    .partialErrors
+);
 
 test("with simple value", () => {
   const $ = ok("foobar");

@@ -2,16 +2,22 @@
 
 import { Base } from "./base";
 
-export class Err<
-  ERROR = unknown,
-  INFO extends Record<string, unknown> = Record<string, unknown>
-> extends Base<false, undefined, ERROR> {
+/**
+ * Alias for any compatible Err without default constraints.
+ */
+export type ErrAny = Err<unknown, unknown>;
+
+export class Err<ERROR = unknown, INFO = undefined> extends Base<
+  false,
+  undefined,
+  ERROR
+> {
   constructor(
     error: ERROR,
     options?: {
       info?: INFO;
       context?: INFO; // deprecated
-      cause?: Err | Error;
+      cause?: ErrAny | Error;
       message?: string;
     }
   ) {
@@ -26,7 +32,7 @@ export class Err<
   }
 
   readonly info: INFO;
-  readonly cause: Err | Error | undefined = undefined;
+  readonly cause: ErrAny | Error | undefined = undefined;
   readonly message: string | undefined = undefined;
 
   /**
@@ -42,7 +48,7 @@ export class Err<
    * @param info A `Record` of attributes for this `Err`.
    * @returns A new `Err` with previous values + given `info`.
    */
-  $info<INFO extends Record<string, unknown>>(info: INFO): Err<ERROR, INFO> {
+  $info<INFO>(info: INFO): Err<ERROR, INFO> {
     return new Err(this._error, {
       ...this,
       info,
@@ -57,9 +63,7 @@ export class Err<
    * @param context A `Record` of attributes for this `Err`.
    * @returns A new `Err` with previous values + given `context`.
    */
-  $context<CONTEXT extends Record<string, unknown>>(
-    context: CONTEXT
-  ): Err<ERROR, CONTEXT> {
+  $context<CONTEXT>(context: CONTEXT): Err<ERROR, CONTEXT> {
     return new Err(this._error, {
       ...this,
       info: context,
@@ -139,15 +143,12 @@ export class Err<
  * ```
  */
 
-export function err<
-  ERROR extends string,
-  INFO extends Record<string, unknown> = never
->(
+export function err<ERROR extends string, INFO = undefined>(
   error: ERROR,
   options?: {
     info?: INFO;
     context?: INFO;
-    cause?: Err | Error;
+    cause?: ErrAny | Error;
     message?: string;
   }
 ) {

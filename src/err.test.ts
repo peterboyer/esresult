@@ -23,6 +23,15 @@ expectType<{ a: number }>(
 expectType<{ a: number }>(
   err("CCC").$info({ a: 1337 }).$message("Something.").context
 );
+// err with info as interface instead of a plain object/record should be ok
+interface MyInterface {
+  foo: string;
+}
+expectType<MyInterface>(
+  err("CCC")
+    .$info({} as MyInterface)
+    .$message("Something.").context
+);
 
 test("with type only", () => {
   const $ = err("FOOBAR");
