@@ -6,6 +6,6 @@ import { Err } from "./err";
  * You may also pass in a INFO for common added properties for the `Err`.
  */
 
-export type Result<VALUE = unknown, ERROR = unknown, INFO = undefined> =
+export type Result<VALUE = unknown, ERROR = unknown, INFO = unknown> =
   | Ok<VALUE>
   | Err<ERROR, INFO>;
