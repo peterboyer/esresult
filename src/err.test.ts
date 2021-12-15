@@ -1,5 +1,5 @@
 import { expectType } from "tsd";
-import { ok, err } from "./exports";
+import { ok, err, Result } from "./exports";
 
 // err.ok must be false
 expectType<false>(err("CODE").ok);
@@ -23,6 +23,12 @@ expectType<{ a: number }>(
 expectType<{ a: number }>(
   err("CCC").$info({ a: 1337 }).$message("Something.").context
 );
+// err $cause with unknown error
+{
+  const $: Result<unknown> = err("SOMETHING");
+  !$.ok ? err("CCC").$cause($) : undefined;
+  !$.ok ? err("CCC").because($) : undefined;
+}
 // err with info as interface instead of a plain object/record should be ok
 interface MyInterface {
   foo: string;

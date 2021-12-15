@@ -77,7 +77,7 @@ export class Err<ERROR = unknown, INFO = undefined> extends Base<
    * @param cause An `Err` or `Error` object.
    * @returns A new `Err` with previous values + given `cause`.
    */
-  $cause(cause: Err | Error | undefined): Err<ERROR, INFO> {
+  $cause(cause: ErrAny | Error | undefined): Err<ERROR, INFO> {
     return new Err(this._error, {
       ...this,
       cause,
@@ -104,7 +104,7 @@ export class Err<ERROR = unknown, INFO = undefined> extends Base<
    * @param cause An `Err` or `Error` object.
    * @returns A new `Err` with previous values + given `source`.
    */
-  because(cause: Err | Error | undefined): Err<ERROR, INFO> {
+  because(cause: ErrAny | Error | undefined): Err<ERROR, INFO> {
     return new Err(this._error, {
       ...this,
       cause,
