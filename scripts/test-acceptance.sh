@@ -12,8 +12,8 @@ cleanup() {
 
 trap "cleanup" EXIT
 
-mkdir -p node_modules/@armix/terror
-cp -r dist/* node_modules/@armix/terror
+mkdir -p node_modules/esresult
+cp -r dist/* node_modules/esresult
 mv package.json package.json.ignore
 mv dist/package.json dist/package.json.ignore
 

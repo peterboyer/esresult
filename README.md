@@ -1,9 +1,9 @@
-# tError
+# ES Result
 
-[![.github/workflows/ci.yml](https://github.com/ptboyer/terror/actions/workflows/ci.yml/badge.svg)](https://github.com/ptboyer/terror/actions/workflows/ci.yml)
+[![.github/workflows/ci.yml](https://github.com/ptboyer/esresult/actions/workflows/ci.yml/badge.svg)](https://github.com/ptboyer/esresult/actions/workflows/ci.yml)
 
-`terror` (typed-error) is a tiny, zero-dependency, TypeScript-compatible utility
-for better error-handling patterns in your code. `terror` enforces a consistent
+ES Result (`esresult`) is a zero-dependency, TypeScript-based utility for better
+error-handling patterns in your code. `esresult` enforces a consistent
 error-handling control-flow by "baking-in" error states as domain-valid return
 values, reserving unexpectedly thrown errors to represent uncaught bugs, thus
 avoiding `try`/`catch` blocks in regular use.
@@ -13,7 +13,7 @@ possible (expected) error states of a function, integrating typed-errors as a
 statically checkable return-type for your functions' interfaces (name,
 parameters, ok result, and **error results**!).
 
-`terror` also supports:
+`esresult` also supports:
 
 - **matching by `type`** (allowing full intellisense of functions' possible
   error results)
@@ -29,14 +29,14 @@ Heavily inspired by [`neverthrow`](https://www.npmjs.com/package/neverthrow)
 
 ## API
 
-[View Docs/Examples](https://ptboyer.github.io/terror/).
+[View Docs/Examples](https://ptboyer.github.io/esresult/).
 
 ```shell
-$ yarn add @armix/terror
+yarn add esresult
 ```
 
 ```typescript
-import { ok, err, fromThrowable } from "@armix/terror";
+import { ok, err, fromThrowable } from "esresult";
 ```
 
 ## Overview
@@ -44,7 +44,7 @@ import { ok, err, fromThrowable } from "@armix/terror";
 ### ✔️ Enjoy this:
 
 ```typescript
-import { ok, err } from "@armix/terror";
+import { ok, err } from "esresult";
 import { getUser } from "...";
 
 async function foo(...) {

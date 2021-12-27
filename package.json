@@ -1,10 +1,10 @@
 {
-  "name": "@armix/terror",
+  "name": "esresult",
   "version": "1.0.0",
-  "description": "Universally better error-handling for TypeScript as a tiny, zero-dependency general purpose utility.",
+  "description": "Result monad with useful error handling features.",
   "main": "index.js",
-  "repository": "git@github.com:ptboyer/terror.git",
-  "author": "Peter Boyer <github.com/ptboyer>",
+  "repository": "github:ptboyer/esresult",
+  "author": "Peter Boyer <esresult@peterboyer.me> (https://github.com/ptboyer)",
   "license": "MIT",
   "private": false,
   "scripts": {
@@ -42,11 +42,18 @@
     "typescript": "^4.4.4"
   },
   "keywords": [
-    "typed",
-    "error",
-    "handling",
-    "throw",
+    "es",
     "result",
+    "ok",
+    "error",
+    "async",
+    "promise",
+    "monad",
+    "monads",
+    "monadic",
+    "fp",
+    "functional",
+    "rop",
     "typescript"
   ]
 }

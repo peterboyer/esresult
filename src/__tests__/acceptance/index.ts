@@ -1,4 +1,4 @@
-import { ok, err, fromThrowable } from "@armix/terror";
+import { ok, err, fromThrowable } from "esresult";
 
 describe("example", () => {
   const users: Record<string, { id: string; name: string }> = {
@@ -36,7 +36,7 @@ describe("example", () => {
   });
 });
 
-import { JSON as tJSON } from "@armix/terror/json";
+import { JSON as tJSON } from "esresult/json";
 
 describe("json", () => {
   test("parse/stringify", () => {
