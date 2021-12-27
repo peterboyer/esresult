@@ -1,176 +1,245 @@
-# ES Result
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/8391902/147464722-786db152-e32d-429a-955a-d1e12960b8fc.png" alt="esresult" />
+</p>
 
-[![.github/workflows/ci.yml](https://github.com/ptboyer/esresult/actions/workflows/ci.yml/badge.svg)](https://github.com/ptboyer/esresult/actions/workflows/ci.yml)
+`esresult` is a zero-dependency, TypeScript-first utility for better
+error-handling patterns in your code.
 
-ES Result (`esresult`) is a zero-dependency, TypeScript-based utility for better
-error-handling patterns in your code. `esresult` enforces a consistent
-error-handling control-flow by "baking-in" error states as domain-valid return
-values, reserving unexpectedly thrown errors to represent uncaught bugs, thus
-avoiding `try`/`catch` blocks in regular use.
+It aims to help you build more resilient software by **forcing function callers
+to deal with possible domain-specific errors**, as opposed to easily forgotten
+try/catch blocks (or other emergent anti-patterns like brittle catch-all blocks
+that attempt to handle too much).
 
-Returning errors (instead of throwing them) allows the caller to be aware of all
-possible (expected) error states of a function, integrating typed-errors as a
-statically checkable return-type for your functions' interfaces (name,
-parameters, ok result, and **error results**!).
+**Domain-specific errors must be an explicit part of a function's public API**.
 
-`esresult` also supports:
+Returning errors (instead of `throw`ing them) allows the caller to be aware of
+all possible domain-specific error values of a function, and allows for static
+type-checking to help enforce correctness of error-handling logic.
 
-- **matching by `type`** (allowing full intellisense of functions' possible
-  error results)
-- **cause-chaining** (to allow tracking domain-specific error causal-chains)
-- **messages** (to allow adding human-readable detail to a given error `type`),
-- **context** (to allow adding contextual data of error, e.g. failing iteration
-  index/value)
+`esresult` supports:
 
-Heavily inspired by [`neverthrow`](https://www.npmjs.com/package/neverthrow)
-([npm](https://www.npmjs.com/package/neverthrow),
-[github](https://github.com/supermacro/neverthrow)) and Rust's
-[`Result`](https://doc.rust-lang.org/std/result/enum.Result.html) type.
+- **intellisense** of a `Result`'s possible error types.
+- **cause-chaining** to build domain-specific error causal-chains.
+- **built-in data structure for error messages and info** for canonical error
+  descriptions and/or contextual error information (e.g. data of a failing
+  iteration in a loop).
 
 ## API
 
-[View Docs/Examples](https://ptboyer.github.io/esresult/).
+- [View Reference Docs + Examples](https://ptboyer.github.io/esresult/)
+
+## Install
 
 ```shell
 yarn add esresult
 ```
 
-```typescript
-import { ok, err, fromThrowable } from "esresult";
-```
-
 ## Overview
 
-### ✔️ Enjoy this:
+Annotate your functions with a `Result` generic to explicitly define a
+successful `Ok` type (returned with `ok(value)`) and optionally define all
+possible domain-specific `Err` types that the function may return (returned with
+`err(type)`).
 
-```typescript
-import { ok, err } from "esresult";
-import { getUser } from "...";
+```ts
+import { Result, ok, err } from "esresult";
+```
 
-async function foo(...) {
-  // yay: function doesn't need try/catch, returns Result instead
-  const $user = await getUser(...);
+### Define only `Ok` type.
 
-  // yay: handle specific conditions if needed
-  // yay: intellisense for is(...) to match error types
-  if ($user.is("NOT_FOUND")) return ok(undefined);
+```ts
+function foo(source: string): Result<number> { ... }
+```
 
-  // yay: provide a function-domain specific error + ref. of `cause`
-  if (!$user.ok) return err("GET_USER_ERROR").$cause($user);
+### Or define both `Ok` and all possible `Err` types as a union.
 
-  // yay: handled the error, now safely use the expected value.
-  const user = $user.value;
+```ts
+function foo(source: string): Result<number, "INVALID" | "TOO_BIG"> { ... }
+```
 
-  // yay: didn't have to use let to solve closure problem
-  return ok(user);
+### Use `ok(...)` and `err(...)` to return values and errors.
+
+```ts
+function foo(source: string): Result<number, "INVALID" | "TOO_BIG"> {
+  const result = parseInt(source, 10);
+
+  if (Number.isNan(result))
+    return err("INVALID");
+
+  if (result > 100)
+    return err("TOO_BIG");
+
+  return ok(result);
 }
 ```
 
-### 🗑️ Not this:
+### Read a `Result`'s success or failure state, using `.ok`.
 
-```typescript
-// yuck: need to import all errors you wish to handle
-import { getUser, NotFoundError } from "...";
+```ts
+const $a = foo("100");
 
-// yuck: does every function need it's only error sub-class?
-export class FooError extends Error {}
+// if `ok` is false, Result is an error.
+if (!$a.ok) return ...
 
-async function foo(...) {
-  // yuck: need to define variable outside of try/catch closure
-  let user: ReturnType<typeof getUser> | undefined;
-
-  // yuck: all callers need to remember to wrap with try/catch
-  try {
-    // yuck: need to break indentation to catch potential errors
-    user = await getUser(...);
-  } catch (e) {
-    // yuck: e is `any`, not type-safe, could be anything
-    // yuck: need to import all possible error types to compare
-    // yuck: need to define custom error sub-classes at all
-    if (e instanceof NotFoundError) return undefined;
-
-    // yuck: unable to chain in e, unless custom error class
-    if (...) throw new FooError("Unable to get user.");
-
-    // yuck: now foo's caller is to suffer try/catch hell
-    throw e;
-  }
-
-  return user;
-}
+// otherwise, Result is an ok value.
+const a = $a.value;
 ```
 
-## Wrap Unsafe Throwables
+### Create an Error chain, using `.$cause(...)`.
 
-```typescript
-// yuck: throwable function
-function fn(...) {
-  if (...) throw new TypeError(...);
-  return result;
+Rather than wrapping many statements in their own try/catch closures (which are
+annoying when trying to use `const` for assignments), you can handle returned
+`Result` objects and their values directly. `Err` objects support `.$cause(Err)`
+to allow domain-space casual-chaining of errors that make debugging and
+reporting a breeze.
+
+```ts
+const $a = foo("100");
+if (!$a.ok) {
+  // return a new error, and track its cause
+  return err("FOO_ERROR").$cause($a);
 }
+const a = $a.value;
 ```
 
-### ✔️ Enjoy this:
+### Or continue with default value, using `.or(...)` and `.orUndefined()`.
 
-```typescript
-// yay: safely wrap the throwable
+Many libraries opt to simplify their API by returning `undefined` (or `null`)
+when encountering an error rather than `throw`ing or otherwise reporting details
+of a failure. With a `Result` the API caller can choose to handle an error with
+`undefined` or with a value of the matching `Ok` type.
+
+```ts
+const a = foo("100").orUndefined(); // default to undefined
+const a = foo("100").or(50); // default to different number
+const a = foo("100").or("50"); // ts: error: "50" is not of type: number
+```
+
+### Or handle a specific error type, using `.is(...)`.
+
+```ts
+const $a = foo("100");
+if ($a.is("FOOBAR")) {
+//        ^ ts: error: can only be: "INVALID" | "TOO_BIG"
+  return err("CRITICAL_ERROR").$cause($a);
+}
+const a = $a.orUndefined(); // gracefully continue
+```
+
+### Enrich your Errors, using `.$info(...)` and `$message(...)`.
+
+All other Result/error-handling libraries only support a basic error primitive
+(e.g. string, Error-object, etc.) leaving the developer to implement their own
+interfaces to store possible contextual information (e.g. status codes, failing
+object, etc.). Because these use-cases are so common, `esresult`'s `Err` object
+supports adding this information out-of-the-box.
+
+```ts
+const $ = err("QUERY_ERROR")
+  .$cause($response) // details on the cause, e.g. network error?
+  .$info({ url: requestUrl, query, variables }) // relevant context details
+  .$message("Unable to communicate with the server.") // human readable
+
+$.cause
+//    ^ type: Err<unknown, unknown> (causal chains are not generic)
+$.info.
+//    ^ intellisense: "url" | "query" | "variables"
+$.message
+//      ^ type: string
+```
+
+### Type-safe access for Error `.info`, using `Result<...>`.
+
+You can define the `info` shape/interface of a function's returned `Err` objects
+by adding to the result type's `Result<>` generic (however, if you are happy
+with inferring the function's return type, the `err().$info(...)` object will
+already have the `info` shape inferred).
+
+```ts
+function fn(): Result<
+  UserResult,
+  "ID_INVALID" | "ID_NOT_FOUND",
+  { id: string } // all returned `err()`s must have `$.info({ id })` given
+>
+```
+
+#### Errors with different `info` interfaces.
+
+In case you have a function that has different `info` shapes for different
+returned errors, you can manually form your own union of `Ok` and `Err` generics
+to represent what each individual error may additionally include.
+
+```
+import { Ok, Err } from "esresult";
+
+function fn():
+  | Ok<UserResult>
+  | Err<"ID_INVALID", { id: string, validationError: ... }>
+  | Err<"ID_NOT_FOUND", { id: string }>
+  | ...
+```
+
+> NOTE: If you don't have at least one of both `Ok` and `Err` in your return
+signature then some type discriminations may feel odd (e.g. if only `Ok<>` is
+returned then `$.ok` will only be `true` (instead of `boolean`) which may make
+comparisons like `$.ok === false` complain because `true` will never overlap
+`false` (unlike a `boolean`)). This is why it is recommended to use `Result`
+wherever possible.
+
+> TODO: The `esresult` API for defining multiple `Err` types with different
+`info` interfaces for via. a single `Result` object may be improved in the
+future.
+
+### Wrap a function that can throw, using `.fromThrowable(...)`.
+
+```ts
+import { fromThrowable } from "esresult";
+
+// throwable
+function fn() { throw new Error(...); }
+
+// wrap
 const safeFn = fromThrowable(fn);
 
+// safely call with Result
 const $result = safeFn(...);
+
+// thrown error is available as `$result.error`
 if (!$result.ok) return err(...).by($result);
 ```
 
-### 🗑️ Not this:
+### Fallback to unstructured Error, using `err.primitive(...)`.
 
-```typescript
-// yuck: need to try/catch when calling
-try {
-  fn(...);
-} catch (e) {
-  throw new Error(...);
-}
-```
+If you're unable to use `fromThrowable` to wrap a throwing function, or you just
+really don't want to use a structured error type, you can create an primitive
+`err` using anything for its `error` value.
 
-## Intellisense Support
-
-```typescript
-function foo(...) {
-  if (...) return err("AAA");
-  if (...) return err("BBB");
-  return ok(...);
-}
-
-const $foo = foo(...);
-if ($foo.is( ___ )) ...
-             ^ can only be: "AAA" | "BBB"
-```
-
-## Adding Context/Message Detail
-
-It is often very useful to store context about what specifically caused an
-error, particularly if an error-chain becomes quite deep or if working with
-iterable data.
-
-```typescript
-for (const a of items) {
-  if (...)
-    return err("BAD_FORMAT")
-      // yay: add a detailed message without sacrificing an error code/type
-      .$message("Item excepts a strict of only uppercase letters")
-      // yay: add information about the failing iteration
-      .$info({ a });
-}
-```
-
-## Fallback To Primitive/Unstructured Error
-
-If you're unable to use `fromThrowable` to wrap a throwing function, you can
-create an primitive `err` using anything for its `error` value.
-
-```typescript
+```ts
 // primitive/unstructured err
 const $ = err.primitive(new TypeError(...));
 
 $.ok      // false
 $.error   // TypeError
 ```
+
+### Matching Error instances, using `.is(...)`.
+
+In some rare cases (e.g. dealing with `err.primitives`) you may need to check if
+an error type is an instance of a type (i.e. shares a common prototype). This
+can be done via. `Err.is()` if you don't want to discriminate `.ok` in order to
+access `$.error` (as it only exists on `Err` objects).
+
+```ts
+const $ = err.primitive(new MyCustomError());
+
+$.is(MyCustomError.prototype) // true
+$.error instanceof MyCustomError // true
+```
+
+## Motivation
+
+Heavily inspired by:
+- [`neverthrow`](https://www.npmjs.com/package/neverthrow)
+  ([npm](https://www.npmjs.com/package/neverthrow),
+  [github](https://github.com/supermacro/neverthrow))
+- Rust's [`Result`](https://doc.rust-lang.org/std/result/enum.Result.html) type.
