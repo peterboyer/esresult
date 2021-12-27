@@ -1,6 +1,11 @@
 import { Base } from "./base";
 import { ErrAny } from "./err";
 
+/**
+ * Alias for any compatible Ok without default constraints.
+ */
+export type OkAny = Ok<unknown, ErrAny[] | undefined>;
+
 export class Ok<
   VALUE = unknown,
   PARTIALERRORS extends ErrAny[] | undefined = undefined

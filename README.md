@@ -57,6 +57,27 @@ function foo(source: string): Result<number> { ... }
 function foo(source: string): Result<number, "INVALID" | "TOO_BIG"> { ... }
 ```
 
+#### Or define both `Ok`, all possible `Err` types as a union, and common info object.
+
+```ts
+function foo(source: string): Result<
+  number,
+  "INVALID" | "TOO_BIG",
+  { myValue: string | number }
+> { ... }
+```
+
+#### Or define both `Ok`, and different `info` objects per `Err` types.
+
+```ts
+function foo(source: string): Result<
+  number,
+  | Err<"INVALID", { a?: string }>
+  | Err<"TOO_BIG" | "TOO_SMALL", { min?: number, max?: number }>
+  | Err<"UNKNOWN", { a: string, b: string }>
+> { ... }
+```
+
 ### Use `ok(...)` and `err(...)` to return values and errors.
 
 ```ts
@@ -67,7 +88,7 @@ function foo(source: string): Result<number, "INVALID" | "TOO_BIG"> {
     return err("INVALID");
 
   if (result > 100)
-    return err("TOO_BIG");
+    return err("TOO_BIG").$info({ max: 100 });
 
   return ok(result);
 }
@@ -203,33 +224,6 @@ function fn(): Result<
   { id: string } // all returned `err()`s must have `$.info({ id })` given
 >
 ```
-
-#### Errors with different `info` interfaces.
-
-In case you have a function that has different `info` shapes for different
-returned errors, you can manually form your own union of `Ok` and `Err` generics
-to represent what each individual error may additionally include.
-
-```
-import { Ok, Err } from "esresult";
-
-function fn():
-  | Ok<UserResult>
-  | Err<"ID_INVALID", { id: string, validationError: ... }>
-  | Err<"ID_NOT_FOUND", { id: string }>
-  | ...
-```
-
-> NOTE: If you don't have at least one of both `Ok` and `Err` in your return
-signature then some type discriminations may feel odd (e.g. if only `Ok<>` is
-returned then `$.ok` will only be `true` (instead of `boolean`) which may make
-comparisons like `$.ok === false` complain because `true` will never overlap
-`false` (unlike a `boolean`)). This is why it is recommended to use `Result`
-wherever possible.
-
-> TODO: The `esresult` API for defining multiple `Err` types with different
-`info` interfaces for via. a single `Result` object may be improved in the
-future.
 
 ### Fallback to unstructured Error, using `err.primitive(...)`.
 
