@@ -148,7 +148,48 @@ $.message
 //      ^ type: string
 ```
 
-### Type-safe access for Error `.info`, using `Result<...>`.
+### Ok with partial errors, using `.ok`.
+
+Sometimes it is useful to provide a successful value AND output any errors or
+warnings that are non-critical (e.g. parsing many items, and returning
+successful items as an array, but reporting failed items as an array of errors).
+
+> For convenience, if the given array of errors is empty, `.partialErrors` will
+evaluate as `undefined`. This allows for expressions like `!$.partialErrors` to
+check for any partial errors, instead of the needless verbose
+`!$.partialErrors?.length`.
+
+```ts
+const okItems: FooItem[] = [];
+const itemErrors: Err<"INVALID" | "OUT_OF_RANGE">[] = [];
+
+const $ = ok(okItems, itemErrors);
+
+$.value
+//    ^ type: FooItem[]
+$.partialErrors
+//            ^ type: undefined | Err<"INVALID" | "OUT_OF_RANGE">
+```
+
+### Wrap a function that can throw, using `.fromThrowable(...)`.
+
+```ts
+import { fromThrowable } from "esresult";
+
+// throwable
+function fn() { throw new Error(...); }
+
+// wrap
+const safeFn = fromThrowable(fn);
+
+// safely call with Result
+const $result = safeFn(...);
+
+// thrown error is available as `$result.error`
+if (!$result.ok) return err(...).by($result);
+```
+
+### Type-safe `.info` access for error, using `Result<...>`.
 
 You can define the `info` shape/interface of a function's returned `Err` objects
 by adding to the result type's `Result<>` generic (however, if you are happy
@@ -189,24 +230,6 @@ wherever possible.
 > TODO: The `esresult` API for defining multiple `Err` types with different
 `info` interfaces for via. a single `Result` object may be improved in the
 future.
-
-### Wrap a function that can throw, using `.fromThrowable(...)`.
-
-```ts
-import { fromThrowable } from "esresult";
-
-// throwable
-function fn() { throw new Error(...); }
-
-// wrap
-const safeFn = fromThrowable(fn);
-
-// safely call with Result
-const $result = safeFn(...);
-
-// thrown error is available as `$result.error`
-if (!$result.ok) return err(...).by($result);
-```
 
 ### Fallback to unstructured Error, using `err.primitive(...)`.
 
