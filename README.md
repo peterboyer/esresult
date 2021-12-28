@@ -223,7 +223,7 @@ const $ = ok(okItems, itemErrors);
 $.value
 //    ^ type: FooItem[]
 $.partialErrors
-//            ^ type: undefined | Err<"INVALID" | "OUT_OF_RANGE">
+//            ^ type: undefined | Err<"INVALID" | "OUT_OF_RANGE">[]
 ```
 
 
@@ -248,23 +248,6 @@ if (!$result.ok) return err(...).by($result);
 
 
 
-### Type-safe `.info` access for error, using `Result<...>`.
-
-You can define the `info` shape/interface of a function's returned `Err` objects
-by adding to the result type's `Result<>` generic (however, if you are happy
-with inferring the function's return type, the `err().$info(...)` object will
-already have the `info` shape inferred).
-
-```ts
-function fn(): Result<
-  UserResult,
-  "ID_INVALID" | "ID_NOT_FOUND",
-  { id: string } // all returned `err()`s must have `$.info({ id })` given
->
-```
-
-
-
 ### Fallback to unstructured Error, using `err.primitive(...)`.
 
 If you're unable to use `fromThrowable` to wrap a throwing function, or you just
@@ -281,7 +264,7 @@ $.error   // TypeError
 
 
 
-### Matching Error instances, using `.is(...)`.
+### Matching Error objects, using `.is(...)`.
 
 In some rare cases (e.g. dealing with `err.primitives`) you may need to check if
 an error type is an instance of a type (i.e. shares a common prototype). This
