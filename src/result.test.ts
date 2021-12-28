@@ -1,7 +1,9 @@
 import { expectType } from "tsd";
-import { Result } from "./result";
-import { Ok, ok } from "./ok";
-import { Err, err } from "./err";
+import { Result, Ok, ok, Err, err } from "./exports";
+
+test("result", function () {
+  return;
+});
 
 expectType<Result<string, "FOO", { hello: string }>>(
   err("FOO").$info({ hello: "world" })

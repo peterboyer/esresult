@@ -1,8 +1,24 @@
 import { expectType } from "tsd";
-import { ok, err, Err } from "./exports";
+import { Ok, ok, err, Err } from "./exports";
+
+// result types must match
+expectType<Ok<number>>(ok(100));
 
 expectType<true>(ok("value").ok);
 expectType<string>(ok("value").value);
+expectType<never[] | undefined>(ok("value").partialErrors);
+expectType<Err<"FOOBAR">[] | undefined>(
+  ok(
+    "value",
+    [].map(() => err("FOOBAR"))
+  ).partialErrors
+);
+expectType<Err<"FOO" | "BAR">[] | undefined>(
+  ok("value", [err("FOO"), err("BAR"), err("FOO")] as Err<"FOO" | "BAR">[])
+    .partialErrors
+);
+expectType<Ok<number, Err<"FOOBAR">>>(ok(100, [err("FOOBAR")]));
+
 // to be okay with partial errors with INFOs as interfaces
 interface MyInterface {
   foo: string;

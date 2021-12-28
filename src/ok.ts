@@ -1,18 +1,18 @@
 import { Base } from "./base";
-import { ErrAny } from "./err";
 
 /**
  * Alias for any compatible Ok without default constraints.
  */
-export type OkAny = Ok<unknown, ErrAny[] | undefined>;
+export type OkAny = Ok<unknown, unknown>;
 
-export class Ok<
-  VALUE = unknown,
-  PARTIALERRORS extends ErrAny[] | undefined = undefined
-> extends Base<true, VALUE, never> {
-  #partialErrors?: PARTIALERRORS;
+export class Ok<VALUE = unknown, PARTIAL_ERROR = never> extends Base<
+  true,
+  VALUE,
+  never
+> {
+  #partialErrors?: PARTIAL_ERROR[];
 
-  constructor(value: VALUE, partialErrors?: PARTIALERRORS) {
+  constructor(value: VALUE, partialErrors?: PARTIAL_ERROR[]) {
     super(true, { value });
     this.#partialErrors = partialErrors;
   }
@@ -21,7 +21,7 @@ export class Ok<
     return this._value;
   }
 
-  get partialErrors(): PARTIALERRORS | undefined {
+  get partialErrors(): PARTIAL_ERROR[] | undefined {
     if (!this.#partialErrors?.length) return undefined;
     return this.#partialErrors;
   }
@@ -46,9 +46,9 @@ export class Ok<
  * ```
  */
 
-export function ok<
-  VALUE,
-  PARTIALERRORS extends ErrAny[] | undefined = undefined
->(value: VALUE, partialErrors?: PARTIALERRORS): Ok<VALUE, PARTIALERRORS> {
-  return new Ok(value, partialErrors);
+export function ok<VALUE, PARTIAL = never>(
+  value: VALUE,
+  partialErrors?: PARTIAL[]
+) {
+  return new Ok<VALUE, PARTIAL>(value, partialErrors);
 }

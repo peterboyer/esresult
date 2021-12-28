@@ -1,5 +1,8 @@
 import { expectType } from "tsd";
-import { ok, err, Result } from "./exports";
+import { ok, Err, err, Result } from "./exports";
+
+// result types must match
+expectType<Err<"CODE">>(err("CODE"));
 
 // err.ok must be false
 expectType<false>(err("CODE").ok);

@@ -27,6 +27,7 @@ type-checking to help enforce correctness of error-handling logic.
 ## API
 
 - [View Reference Docs + Examples](https://ptboyer.github.io/esresult/)
+- [Example With and Without `esresult`](./EXAMPLE.md)
 
 ## Install
 
@@ -42,41 +43,58 @@ possible domain-specific `Err` types that the function may return (returned with
 `err(type)`).
 
 ```ts
-import { Result, ok, err } from "esresult";
+import { Result, Ok, ok, Err, err } from "esresult";
 ```
+
+
 
 ### Define only `Ok` type.
 
 ```ts
-function foo(source: string): Result<number> { ... }
+function foo(...): Result<number>
+function foo(...): Result<Ok<number>>
 ```
+
+> You may use `number` instead of `Ok<number>` as optional shorthand.
+
+
 
 ### Or define both `Ok` and all possible `Err` types as a union.
 
 ```ts
-function foo(source: string): Result<number, "INVALID" | "TOO_BIG"> { ... }
+function foo(...): Result<number, "INVALID" | "TOO_BIG">
+function foo(...): Result<number, Err<"INVALID" | "TOO_BIG">>
+function foo(...): Result<number, Err<"INVALID"> | Err<"TOO_BIG">>
 ```
 
-#### Or define both `Ok`, all possible `Err` types as a union, and common info object.
+> Similar to Ok shorthand, you may pass a `type` instead of `Err<type>`. If
+
+
+
+### Or also define a common `info` object for errors.
 
 ```ts
-function foo(source: string): Result<
-  number,
-  "INVALID" | "TOO_BIG",
-  { myValue: string | number }
-> { ... }
+function foo(...): Result<number, "INVALID", { foo: string }>
+function foo(...): Result<number, Err<"INVALID", { foo: string }>>
 ```
 
-#### Or define both `Ok`, and different `info` objects per `Err` types.
+> `Err` can be directly provided with the `info` shape instead of using `Result`
+> for shorthand.
+
+
+
+### Or define both `Ok`, and different `info` objects per `Err` types.
 
 ```ts
-function foo(source: string): Result<
+function foo(...): Result<
   number,
   | Err<"INVALID", { a?: string }>
   | Err<"TOO_BIG" | "TOO_SMALL", { min?: number, max?: number }>
   | Err<"UNKNOWN", { a: string, b: string }>
-> { ... }
+>
 ```
+
+
 
 ### Use `ok(...)` and `err(...)` to return values and errors.
 
@@ -94,6 +112,8 @@ function foo(source: string): Result<number, "INVALID" | "TOO_BIG"> {
 }
 ```
 
+
+
 ### Read a `Result`'s success or failure state, using `.ok`.
 
 ```ts
@@ -105,6 +125,8 @@ if (!$a.ok) return ...
 // otherwise, Result is an ok value.
 const a = $a.value;
 ```
+
+
 
 ### Create an Error chain, using `.$cause(...)`.
 
@@ -123,6 +145,8 @@ if (!$a.ok) {
 const a = $a.value;
 ```
 
+
+
 ### Or continue with default value, using `.or(...)` and `.orUndefined()`.
 
 Many libraries opt to simplify their API by returning `undefined` (or `null`)
@@ -136,6 +160,8 @@ const a = foo("100").or(50); // default to different number
 const a = foo("100").or("50"); // ts: error: "50" is not of type: number
 ```
 
+
+
 ### Or handle a specific error type, using `.is(...)`.
 
 ```ts
@@ -146,6 +172,8 @@ if ($a.is("FOOBAR")) {
 }
 const a = $a.orUndefined(); // gracefully continue
 ```
+
+
 
 ### Enrich your Errors, using `.$info(...)` and `$message(...)`.
 
@@ -169,7 +197,13 @@ $.message
 //      ^ type: string
 ```
 
+
+
 ### Ok with partial errors, using `.ok`.
+
+```ts
+function foo(...): Result<Ok<number, Err<>>>
+```
 
 Sometimes it is useful to provide a successful value AND output any errors or
 warnings that are non-critical (e.g. parsing many items, and returning
@@ -192,6 +226,8 @@ $.partialErrors
 //            ^ type: undefined | Err<"INVALID" | "OUT_OF_RANGE">
 ```
 
+
+
 ### Wrap a function that can throw, using `.fromThrowable(...)`.
 
 ```ts
@@ -210,6 +246,8 @@ const $result = safeFn(...);
 if (!$result.ok) return err(...).by($result);
 ```
 
+
+
 ### Type-safe `.info` access for error, using `Result<...>`.
 
 You can define the `info` shape/interface of a function's returned `Err` objects
@@ -225,6 +263,8 @@ function fn(): Result<
 >
 ```
 
+
+
 ### Fallback to unstructured Error, using `err.primitive(...)`.
 
 If you're unable to use `fromThrowable` to wrap a throwing function, or you just
@@ -239,6 +279,8 @@ $.ok      // false
 $.error   // TypeError
 ```
 
+
+
 ### Matching Error instances, using `.is(...)`.
 
 In some rare cases (e.g. dealing with `err.primitives`) you may need to check if
@@ -252,6 +294,8 @@ const $ = err.primitive(new MyCustomError());
 $.is(MyCustomError.prototype) // true
 $.error instanceof MyCustomError // true
 ```
+
+
 
 ## Motivation
 

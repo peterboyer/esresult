@@ -142,7 +142,6 @@ export class Err<ERROR = unknown, INFO = undefined> extends Base<
  * $.orUndefined() // undefined
  * ```
  */
-
 export function err<ERROR extends string, INFO = undefined>(
   error: ERROR,
   options?: {
@@ -152,7 +151,7 @@ export function err<ERROR extends string, INFO = undefined>(
     message?: string;
   }
 ) {
-  return new Err(error, options);
+  return new Err<ERROR, INFO>(error, options);
 }
 
 /**
@@ -172,7 +171,6 @@ export function err<ERROR extends string, INFO = undefined>(
  * $.is(SyntaxError.prototype) // false
  * ```
  */
-
 err.primitive = function errPrimitive<ERROR>(error: ERROR): Err<ERROR> {
   return new Err(error);
 };
