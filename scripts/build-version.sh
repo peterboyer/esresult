@@ -3,9 +3,7 @@
 # TAG= env variable not-empty, then git tag with version.
 TAG=$(env | grep TAG)
 
-# TODO: change back to package.json reference
-PKG_NAME="@armix/terror"
-# PKG_NAME=$(dot-json package.json name)
+PKG_NAME=$(dot-json package.json name)
 PKG_VERSION_MAJOR=$(dot-json package.json version)
 
 echo "[*] MAJOR: $PKG_VERSION_MAJOR"
