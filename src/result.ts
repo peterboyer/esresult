@@ -23,19 +23,25 @@ import { Err, ErrAny } from "./err";
  * Result<string, "INVALID" | "MISMATCH">
  * $.error => "INVALID" | "MISMATCH"
  *
+ * Result<string, Err<"INVALID" | "MISMATCH">>
+ * $.error => "INVALID" | "MISMATCH"
+ *
  * Result<string, "INVALID", { input: string }>
- * $.info => { input: string }
+ * $.error === "INVALID"  // $.info() => { input: string }
+ *
+ * Result<string, Err<"INVALID", { input: string }>>
+ * $.error === "INVALID"  // $.info() => { input: string }
  *
  * Result<
- *   Ok<string>,
- *   | Err<"INVALID", { input: string; validationErrors: Issue[] }>
+ *   | Ok<string>,
+ *   | Err<"INVALID", { input: string; issues: Issue[] }>
  *   | Err<"MISMATCH", { input: string; expected: string }>
  *   | Err<"FOO" | "BAR", { test: string }>
  * >
- * $.is("INVALID") // $.info => { input, validationErrors }
- * $.is("MISMATCH") // $.info => { input, expected }
- * $.is("FOO") // $.info => { test }
- * $.is("BAR") // $.info => { test }
+ * $.error === "INVALID"  // $.info() => { input, issues }
+ * $.error === "MISMATCH" // $.info() => { input, expected }
+ * $.error === "FOO"      // $.info() => { test }
+ * $.error === "BAR"      // $.info() => { test }
  * ```
  */
 
@@ -56,7 +62,6 @@ export type ResultAsync<
 import * as _result from ".";
 import * as _ok from "./ok";
 import * as _err from "./err";
-import * as _fromThrowable from "./from-throwable";
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Result {
@@ -76,7 +81,4 @@ export namespace Result {
   export import ErrAny = _err.ErrAny;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   export import err = _err.err;
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  export import fromThrowable = _fromThrowable.fromThrowable;
 }

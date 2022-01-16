@@ -10,10 +10,10 @@ async function foo(...) {
 
   // yay: handle specific conditions if needed
   // yay: intellisense for is(...) to match error types
-  if ($user.is("NOT_FOUND")) return ok(undefined);
+  if ($user.error === "NOT_FOUND") return ok(undefined);
 
   // yay: provide a function-domain specific error + ref. of `cause`
-  if (!$user.ok) return err("GET_USER_ERROR").$cause($user);
+  if (!$user.ok) return err("GET_USER_ERROR").cause($user);
 
   // yay: handled the error, now safely use the expected value.
   const user = $user.value;

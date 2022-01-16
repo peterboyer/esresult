@@ -21,7 +21,7 @@ describe("example", () => {
   test("err", () => {
     const $user = getUser("2");
     expect($user.ok).toBe(false);
-    expect($user.is("NOT_FOUND")).toBe(true);
+    expect($user.error === "NOT_FOUND").toBe(true);
     expect($user.orUndefined()).toBeUndefined();
     expect($user.or({ id: "backup", name: "Backup" })).toMatchObject({
       id: "backup",

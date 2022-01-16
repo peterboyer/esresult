@@ -53,9 +53,11 @@ import { Result, Ok, ok, Err, err } from "esresult";
 ```ts
 function foo(...): Result<number>
 function foo(...): Result<Ok<number>>
+function foo(...): Result<Result.Ok<number>>
 ```
 
-> You may use `number` instead of `Ok<number>` as optional shorthand.
+> You may use `number` instead of `Ok<number>` as optional shorthand. You may
+> also access Ok from Result via. Result.Ok.
 
 
 
@@ -64,10 +66,13 @@ function foo(...): Result<Ok<number>>
 ```ts
 function foo(...): Result<number, "INVALID" | "TOO_BIG">
 function foo(...): Result<number, Err<"INVALID" | "TOO_BIG">>
+function foo(...): Result<number, Result.Err<"INVALID" | "TOO_BIG">>
 function foo(...): Result<number, Err<"INVALID"> | Err<"TOO_BIG">>
+function foo(...): Result<number, Result.Err<"INVALID"> | Result.Err<"TOO_BIG">>
 ```
 
-> Similar to Ok shorthand, you may pass a `type` instead of `Err<type>`. If
+> Similar to Ok shorthand, you may pass a `type` instead of `Err<type>`. You
+> may also access Err from Result via. Result.Err.
 
 
 
@@ -76,6 +81,7 @@ function foo(...): Result<number, Err<"INVALID"> | Err<"TOO_BIG">>
 ```ts
 function foo(...): Result<number, "INVALID", { foo: string }>
 function foo(...): Result<number, Err<"INVALID", { foo: string }>>
+function foo(...): Result<number, Result.Err<"INVALID", { foo: string }>>
 ```
 
 > `Err` can be directly provided with the `info` shape instead of using `Result`
@@ -106,7 +112,7 @@ function foo(source: string): Result<number, "INVALID" | "TOO_BIG"> {
     return err("INVALID");
 
   if (result > 100)
-    return err("TOO_BIG").$info({ max: 100 });
+    return err("TOO_BIG").info({ max: 100 });
 
   return ok(result);
 }
@@ -128,11 +134,11 @@ const a = $a.value;
 
 
 
-### Create an Error chain, using `.$cause(...)`.
+### Create an Error chain, using `.cause(...)`.
 
 Rather than wrapping many statements in their own try/catch closures (which are
 annoying when trying to use `const` for assignments), you can handle returned
-`Result` objects and their values directly. `Err` objects support `.$cause(Err)`
+`Result` objects and their values directly. `Err` objects support `.cause(Err)`
 to allow domain-space casual-chaining of errors that make debugging and
 reporting a breeze.
 
@@ -140,7 +146,7 @@ reporting a breeze.
 const $a = foo("100");
 if (!$a.ok) {
   // return a new error, and track its cause
-  return err("FOO_ERROR").$cause($a);
+  return err("FOO_ERROR").cause($a);
 }
 const a = $a.value;
 ```
@@ -162,20 +168,20 @@ const a = foo("100").or("50"); // ts: error: "50" is not of type: number
 
 
 
-### Or handle a specific error type, using `.is(...)`.
+### Or handle a specific error type, using `.error`.
 
 ```ts
 const $a = foo("100");
-if ($a.is("FOOBAR")) {
-//        ^ ts: error: can only be: "INVALID" | "TOO_BIG"
-  return err("CRITICAL_ERROR").$cause($a);
+if ($a.error === "FOOBAR") {
+//               ^ ts: error: can only be: "INVALID" | "TOO_BIG"
+  return err("CRITICAL_ERROR").cause($a);
 }
 const a = $a.orUndefined(); // gracefully continue
 ```
 
 
 
-### Enrich your Errors, using `.$info(...)` and `$message(...)`.
+### Enrich your Errors, using `.info(...)` and `message(...)`.
 
 All other Result/error-handling libraries only support a basic error primitive
 (e.g. string, Error-object, etc.) leaving the developer to implement their own
@@ -185,16 +191,16 @@ supports adding this information out-of-the-box.
 
 ```ts
 const $ = err("QUERY_ERROR")
-  .$cause($response) // details on the cause, e.g. network error?
-  .$info({ url: requestUrl, query, variables }) // relevant context details
-  .$message("Unable to communicate with the server.") // human readable
+  .cause($response) // details on the cause, e.g. network error?
+  .info({ url: requestUrl, query, variables }) // relevant context details
+  .message("Unable to communicate with the server.") // human readable
 
-$.cause
-//    ^ type: Err<unknown, unknown> (causal chains are not generic)
-$.info.
-//    ^ intellisense: "url" | "query" | "variables"
-$.message
-//      ^ type: string
+$.cause()
+//      ^ type: Err<unknown, unknown> (causal chains are not generic)
+$.info().
+//      ^ intellisense: "url" | "query" | "variables"
+$.message()
+//        ^ type: string
 ```
 
 
@@ -216,14 +222,15 @@ check for any partial errors, instead of the needless verbose
 
 ```ts
 const okItems: FooItem[] = [];
-const itemErrors: Err<"INVALID" | "OUT_OF_RANGE">[] = [];
+const itemWarnings: Err<"INVALID" | "OUT_OF_RANGE">[] = [];
 
-const $ = ok(okItems, itemErrors);
+const $ = ok(okItems).warnings(itemErrors);
+const $ = ok(okItems, { warnings: itemErrors });
 
 $.value
 //    ^ type: FooItem[]
-$.partialErrors
-//            ^ type: undefined | Err<"INVALID" | "OUT_OF_RANGE">[]
+$.warnings()
+//         ^ type: undefined | Err<"INVALID" | "OUT_OF_RANGE">[]
 ```
 
 
@@ -243,7 +250,7 @@ const safeFn = fromThrowable(fn);
 const $result = safeFn(...);
 
 // thrown error is available as `$result.error`
-if (!$result.ok) return err(...).by($result);
+if (!$result.ok) return err(...).cause($result);
 ```
 
 
@@ -260,22 +267,6 @@ const $ = err.primitive(new TypeError(...));
 
 $.ok      // false
 $.error   // TypeError
-```
-
-
-
-### Matching Error objects, using `.is(...)`.
-
-In some rare cases (e.g. dealing with `err.primitives`) you may need to check if
-an error type is an instance of a type (i.e. shares a common prototype). This
-can be done via. `Err.is()` if you don't want to discriminate `.ok` in order to
-access `$.error` (as it only exists on `Err` objects).
-
-```ts
-const $ = err.primitive(new MyCustomError());
-
-$.is(MyCustomError.prototype) // true
-$.error instanceof MyCustomError // true
 ```
 
 

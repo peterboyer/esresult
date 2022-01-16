@@ -5,25 +5,40 @@ import { Base } from "./base";
  */
 export type OkAny = Ok<unknown, unknown>;
 
-export class Ok<VALUE = unknown, PARTIAL_ERROR = never> extends Base<
+export class Ok<VALUE = unknown, WARNING = never> extends Base<
   true,
   VALUE,
-  never
+  undefined
 > {
-  #partialErrors?: PARTIAL_ERROR[];
-
-  constructor(value: VALUE, partialErrors?: PARTIAL_ERROR[]) {
+  constructor(
+    value: VALUE,
+    options?: {
+      warnings?: WARNING[];
+    }
+  ) {
     super(true, { value });
-    this.#partialErrors = partialErrors;
+    this.#warnings = options?.warnings as WARNING[];
   }
 
-  get value(): this["_value"] {
-    return this._value;
+  readonly #warnings?: WARNING[];
+
+  toObject() {
+    return {
+      value: this.error,
+      warnings: this.warnings(),
+    };
   }
 
-  get partialErrors(): PARTIAL_ERROR[] | undefined {
-    if (!this.#partialErrors?.length) return undefined;
-    return this.#partialErrors;
+  warnings(): WARNING[] | undefined;
+  warnings<T>(setErrors: T): Ok<VALUE, WARNING>;
+  warnings<T>(setErrors?: T[]): WARNING[] | undefined | Ok<VALUE, T> {
+    if (setErrors === undefined) {
+      if (!this.#warnings?.length) return undefined;
+      return this.#warnings;
+    }
+    return new Ok(this.value, {
+      warnings: setErrors,
+    });
   }
 }
 
@@ -39,7 +54,7 @@ export class Ok<VALUE = unknown, PARTIAL_ERROR = never> extends Base<
  * const $ = ok({ my: "value" });
  *
  * $.ok // true
- * $.is("INVALID") // false
+ * $.error === "INVALID" // false
  * $.value // { my: "value" }
  * $.or({ my: "default" }) // { my: "value" }
  * $.orUndefined() // { my: "value" }
@@ -48,7 +63,9 @@ export class Ok<VALUE = unknown, PARTIAL_ERROR = never> extends Base<
 
 export function ok<VALUE, PARTIAL = never>(
   value: VALUE,
-  partialErrors?: PARTIAL[]
+  options?: {
+    warnings?: PARTIAL[];
+  }
 ) {
-  return new Ok<VALUE, PARTIAL>(value, partialErrors);
+  return new Ok<VALUE, PARTIAL>(value, options);
 }

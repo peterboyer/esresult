@@ -1,6 +1,7 @@
-// Err
-
 import { Base } from "./base";
+
+export type Cause = ErrAny | Error | undefined;
+export type Message = string | undefined;
 
 /**
  * Alias for any compatible Err without default constraints.
@@ -16,105 +17,66 @@ export class Err<ERROR = unknown, INFO = undefined> extends Base<
     error: ERROR,
     options?: {
       info?: INFO;
-      context?: INFO; // deprecated
-      cause?: ErrAny | Error;
-      message?: string;
+      cause?: Cause;
+      message?: Message;
     }
   ) {
     super(false, { error });
-    this.info = (options?.info ?? options?.context) as INFO;
-    this.cause = options?.cause;
-    this.message = options?.message;
+    this.#info = options?.info as INFO;
+    this.#cause = options?.cause;
+    this.#message = options?.message;
   }
 
-  get error(): ERROR {
-    return this._error;
+  readonly #info: INFO;
+  readonly #cause: Cause = undefined;
+  readonly #message: Message = undefined;
+
+  toObject() {
+    return {
+      error: this.error,
+      info: this.info(),
+      cause: this.cause(),
+      message: this.message(),
+    };
   }
 
-  readonly info: INFO;
-  readonly cause: ErrAny | Error | undefined = undefined;
-  readonly message: string | undefined = undefined;
-
-  /**
-   * @deprecated Use `.info` instead.
-   */
-  get context(): INFO {
-    return this.info;
-  }
-
-  /**
-   * Add/update the `Err`'s `info`.
-   *
-   * @param info A `Record` of attributes for this `Err`.
-   * @returns A new `Err` with previous values + given `info`.
-   */
-  $info<INFO>(info: INFO): Err<ERROR, INFO> {
-    return new Err(this._error, {
-      ...this,
-      info,
-      context: info,
+  info(): INFO;
+  info<T>(setInfo: T): Err<ERROR, T>;
+  info<T>(setInfo?: T): INFO | Err<ERROR, T> {
+    if (setInfo === undefined) return this.#info;
+    return new Err(this.error, {
+      info: setInfo,
+      cause: this.#cause,
+      message: this.#message,
     });
   }
 
-  /**
-   * Add/update the `Err`'s `info` (formerly `context`).
-   *
-   * @deprecated
-   * @param context A `Record` of attributes for this `Err`.
-   * @returns A new `Err` with previous values + given `context`.
-   */
-  $context<CONTEXT>(context: CONTEXT): Err<ERROR, CONTEXT> {
-    return new Err(this._error, {
-      ...this,
-      info: context,
-      context,
+  cause(): Cause;
+  cause(setCause: Cause): Err<ERROR, INFO>;
+  cause(setCause?: Cause): Cause | Err<ERROR, INFO> {
+    if (setCause === undefined) return this.#cause;
+    return new Err(this.error, {
+      info: this.#info,
+      cause: setCause,
+      message: this.#message,
     });
   }
 
-  /**
-   * Add/update the `Err`'s `cause`.
-   *
-   * @param cause An `Err` or `Error` object.
-   * @returns A new `Err` with previous values + given `cause`.
-   */
-  $cause(cause: ErrAny | Error | undefined): Err<ERROR, INFO> {
-    return new Err(this._error, {
-      ...this,
-      cause,
-    });
-  }
-
-  /**
-   * Add/update the `Err`'s `message`.
-   *
-   * @param message A `string` message.
-   * @returns A new `Err` with previous values + given `message`.
-   */
-  $message(message: string): Err<ERROR, INFO> {
-    return new Err(this._error, {
-      ...this,
-      message,
-    });
-  }
-
-  /**
-   * Add/update the `Err`'s `source` (formerly `cause`).
-   *
-   * @deprecated Use `.$cause` instead.
-   * @param cause An `Err` or `Error` object.
-   * @returns A new `Err` with previous values + given `source`.
-   */
-  because(cause: ErrAny | Error | undefined): Err<ERROR, INFO> {
-    return new Err(this._error, {
-      ...this,
-      cause,
+  message(): Message;
+  message(setMessage: Message): Err<ERROR, INFO>;
+  message(setMessage?: Message): Message | Err<ERROR, INFO> {
+    if (setMessage === undefined) return this.#message;
+    return new Err(this.error, {
+      info: this.#info,
+      cause: this.#cause,
+      message: setMessage,
     });
   }
 }
 
 /**
  * Creates a new `Err` object with given error string and optional properties.
- * You will often use `err(...).$cause(...)` to create an error chain that is
+ * You will often use `err(...).cause(...)` to create an error chain that is
  * useful for debugging, error-reporting, and/or control-flow.
  *
  * @param error An error string that may be used to discriminate error types.
@@ -126,16 +88,16 @@ export class Err<ERROR = unknown, INFO = undefined> extends Base<
  * const $ = err("INVALID");
  * const $ = err("INVALID", {});
  * const $ = err("INVALID", { message: "Message.", info: { a: 1 } });
- * const $ = err("INVALID").$cause($previous);
+ * const $ = err("INVALID").cause($previous);
  * const $ = err("INVALID", { cause: $previous });
  * return err("INVALID")
- *   .$cause($previous)
- *   .$info({ a: 1 })
- *   .$message("Something went wrong.");
+ *   .cause($previous)
+ *   .info({ a: 1 })
+ *   .message("Something went wrong.");
  *
  * $.ok // false
- * $.is("INVALID") // true
  * $.error // "INVALID"
+ * $.error === "INVALID" // true
  * $.message // "Message."
  * $.context // { a: 1 }
  * $.or("defaultValue") // "defaultValue" (type-error, intended union with Ok)
@@ -146,9 +108,8 @@ export function err<ERROR extends string, INFO = undefined>(
   error: ERROR,
   options?: {
     info?: INFO;
-    context?: INFO;
-    cause?: ErrAny | Error;
-    message?: string;
+    cause?: Cause;
+    message?: Message;
   }
 ) {
   return new Err<ERROR, INFO>(error, options);
@@ -167,8 +128,8 @@ export function err<ERROR extends string, INFO = undefined>(
  *
  * $.ok // false
  * $.error // TypeError
- * $.is(TypeError.prototype) // true
- * $.is(SyntaxError.prototype) // false
+ * $.error instanceof TypeError // true
+ * $.error instanceof SyntaxError // false
  * ```
  */
 err.primitive = function errPrimitive<ERROR>(error: ERROR): Err<ERROR> {

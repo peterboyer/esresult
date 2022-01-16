@@ -12,7 +12,7 @@ test("stringify to err on invalid", () => {
   cycle.cycle = cycle;
   const $ = JSON.stringify(cycle);
   expect($.ok).toBe(false);
-  expect(!$.ok && $.is(TypeError.prototype)).toBe(true);
+  expect($.error instanceof TypeError).toBe(true);
 });
 
 test("parse to ok on valid", () => {
@@ -24,5 +24,5 @@ test("parse to ok on valid", () => {
 test("parse to err on invalid", () => {
   const $ = JSON.parse("8731yhi12U!Y@G#JG#HB");
   expect($.ok).toBe(false);
-  expect(!$.ok && $.is(SyntaxError.prototype)).toBe(true);
+  expect($.error instanceof SyntaxError).toBe(true);
 });

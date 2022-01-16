@@ -1,5 +1,5 @@
 import { expectType } from "tsd";
-import { ok, Err, err, Result } from "./exports";
+import { ok, Err, ErrAny, err, Result } from "./exports";
 
 // result types must match
 expectType<Err<"CODE">>(err("CODE"));
@@ -11,26 +11,19 @@ expectType<"CODE">(err("CODE").error);
 // union of err should union .error attributes
 expectType<"AAA" | "BBB">([err("AAA").error, err("BBB").error][0]);
 // err without given info should be undefined
-expectType<undefined>(err("CCC").info);
-expectType<undefined>(err("CCC").context);
+expectType<undefined>(err("CCC").info());
 // err with given info should be correctly assigned/generic
-expectType<{ a: number }>(err("CCC", { info: { a: 1337 } }).info);
-expectType<{ a: number }>(err("CCC", { context: { a: 1337 } }).context);
+expectType<{ a: number }>(err("CCC", { info: { a: 1337 } }).info());
 // err with later assigned info should be correctly assigned
-expectType<{ a: number }>(err("CCC").$info({ a: 1337 }).info);
-expectType<{ a: number }>(err("CCC").$context({ a: 1337 }).context);
+expectType<{ a: number }>(err("CCC").info({ a: 1337 }).info());
 // err with later assigned info + message should still be correctly assigned
 expectType<{ a: number }>(
-  err("CCC").$info({ a: 1337 }).$message("Something.").info
+  err("CCC").info({ a: 1337 }).message("Something.").info()
 );
-expectType<{ a: number }>(
-  err("CCC").$info({ a: 1337 }).$message("Something.").context
-);
-// err $cause with unknown error
+// err cause with unknown error
 {
   const $: Result<unknown> = err("SOMETHING");
-  !$.ok ? err("CCC").$cause($) : undefined;
-  !$.ok ? err("CCC").because($) : undefined;
+  !$.ok ? err("CCC").cause($) : undefined;
 }
 // err with info as interface instead of a plain object/record should be ok
 interface MyInterface {
@@ -38,19 +31,20 @@ interface MyInterface {
 }
 expectType<MyInterface>(
   err("CCC")
-    .$info({} as MyInterface)
-    .$message("Something.").context
+    .info({} as MyInterface)
+    .message("Something.")
+    .info()
 );
 
 test("with type only", () => {
   const $ = err("FOOBAR");
   expect($.ok).toBe(false);
-  expect(!$.ok && $).toMatchObject({ error: "FOOBAR" });
+  expect($.toObject()).toMatchObject({ error: "FOOBAR" });
 });
 
 test("with type + message", () => {
   const $ = err("FOOBAR", { message: "Foo required Bar." });
-  expect(!$.ok && $).toMatchObject({
+  expect($.toObject()).toMatchObject({
     error: "FOOBAR",
     message: "Foo required Bar.",
   });
@@ -59,32 +53,33 @@ test("with type + message", () => {
 test("with type + cause (with info)", () => {
   const $x = err("FAILED", { info: { foobar: 420 } });
   const $ = err("FOOBAR", { cause: $x });
-  expect(!$.ok && $).toMatchObject({
+  const _$ = $.toObject();
+  expect(_$).toMatchObject({
     error: "FOOBAR",
-    cause: {
-      error: "FAILED",
-      info: { foobar: 420 },
-    },
+  });
+  expect((_$.cause as ErrAny).toObject()).toMatchObject({
+    error: "FAILED",
+    info: { foobar: 420 },
   });
 });
 
-test("with .is(...) error check", () => {
+test("with .error error check", () => {
   const $ = err("FOOBAR");
-  expect($.is("FOOBAR")).toBe(true);
+  expect($.error === "FOOBAR").toBe(true);
   // @ts-expect-error ERROR is not assignable, checking return of false.
-  expect($.is("ERROR")).toBe(false);
+  expect($.error === "ERROR").toBe(false);
 });
 
-test("with .is(...) error check with Error type", () => {
+test("with .error check with instanceof", () => {
   const $ = err.primitive(new TypeError());
-  expect($.is(TypeError.prototype)).toBe(true);
-  expect($.is(SyntaxError.prototype)).toBe(false);
+  expect($.error instanceof TypeError).toBe(true);
+  expect($.error instanceof SyntaxError).toBe(false);
 });
 
-test("with .$cause(...)", () => {
+test("with .cause(...)", () => {
   const $x = err("FAILED");
-  const $ = err("FOOBAR").$cause($x);
-  expect(!$.ok && $).toMatchObject({
+  const $ = err("FOOBAR").cause($x);
+  expect($.toObject()).toMatchObject({
     error: "FOOBAR",
     cause: {
       error: "FAILED",
@@ -92,9 +87,9 @@ test("with .$cause(...)", () => {
   });
 });
 
-test("with .$info(...)", () => {
-  const $ = err("FOOBAR").$info({ foo: "bar", fin: "baz" });
-  expect(!$.ok && $).toMatchObject({
+test("with .info(...)", () => {
+  const $ = err("FOOBAR").info({ foo: "bar", fin: "baz" });
+  expect($.toObject()).toMatchObject({
     error: "FOOBAR",
     info: {
       foo: "bar",
@@ -103,21 +98,21 @@ test("with .$info(...)", () => {
   });
 });
 
-test("with .$message(...)", () => {
-  const $ = err("FOOBAR").$message("My error message.");
-  expect(!$.ok && $).toMatchObject({
+test("with .message(...)", () => {
+  const $ = err("FOOBAR").message("My error message.");
+  expect($.toObject()).toMatchObject({
     error: "FOOBAR",
     message: "My error message.",
   });
 });
 
-test("with stacked $info|$message|$cause", () => {
+test("with stacked info|message|cause", () => {
   const $x = err("FAILED");
   const $ = err("FOOBAR")
-    .$info({ foo: "bar", fin: "baz" })
-    .$message("Something went wrong...")
-    .$cause($x);
-  expect(!$.ok && $).toMatchObject({
+    .info({ foo: "bar", fin: "baz" })
+    .message("Something went wrong...")
+    .cause($x);
+  expect($.toObject()).toMatchObject({
     error: "FOOBAR",
     info: {
       foo: "bar",
@@ -152,12 +147,10 @@ describe("ok|err union", () => {
   }
 
   const $ = fn("1");
-  // function result of union of Ok and Err should intellisense .is(...) to be
-  //   only the union members from .error as argument.
-  if ($.is("AAA")) fn("...");
-  if ($.is("BBB")) fn("...");
+  if ($.error === "AAA") fn("...");
+  if ($.error === "BBB") fn("...");
   // @ts-expect-error "CCC" should not be assignable.
-  if ($.is("CCC")) fn("...");
+  if ($.error === "CCC") fn("...");
 
   // can be string because ok(z -> string)
   $.or("string");
@@ -203,32 +196,7 @@ describe("err.primitive", () => {
 });
 
 describe("deprecations", () => {
-  test("with type + context", () => {
-    const $ = err("FOOBAR", { context: { foo: "bar", abc: 123 } });
-    expect(!$.ok && $).toMatchObject({
-      error: "FOOBAR",
-      info: { foo: "bar", abc: 123 },
-      context: { foo: "bar", abc: 123 },
-    });
-  });
-
-  test("with .$context(...)", () => {
-    const $ = err("FOOBAR").$context({ foo: "bar", abc: 123 });
-    expect(!$.ok && $).toMatchObject({
-      error: "FOOBAR",
-      info: { foo: "bar", abc: 123 },
-      context: { foo: "bar", abc: 123 },
-    });
-  });
-
-  test("with .because(...)", () => {
-    const $x = err("FAILED");
-    const $ = err("FOOBAR").because($x);
-    expect(!$.ok && $).toMatchObject({
-      error: "FOOBAR",
-      cause: {
-        error: "FAILED",
-      },
-    });
+  test("pass", () => {
+    expect(true).toBeTruthy();
   });
 });
