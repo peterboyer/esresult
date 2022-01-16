@@ -6,9 +6,6 @@ import { Result } from "./result";
 type IfAny<T, Y, N> = 0 extends 1 & T ? Y : N;
 type IsAny<T> = IfAny<T, true, false>;
 
-// TODO: Remove in favour of built-in utility type on TypeScript 4.5 release.
-type Awaited<T> = T extends Promise<infer Result> ? Result : never;
-
 /**
  * Wraps a throwable function so that it cannot throw and instead returns:
  * - `Ok` with its normal return value, or
