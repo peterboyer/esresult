@@ -10,6 +10,11 @@ function parse(source: unknown): string {
 const safeParse = fromThrowable(parse);
 expectType<Result<string>>(safeParse(true));
 
+const safeArgLess = fromThrowable(() => {
+  throw new Error();
+});
+expectType<Result<void>>(safeArgLess());
+
 const $ = safeParse("input");
 if ($.ok) expectType<string>($.value);
 if (!$.ok) expectType<unknown>($.error);

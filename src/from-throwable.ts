@@ -36,6 +36,8 @@ export function fromThrowable<FN extends (...args: any[]) => any>(fn: FN) {
   ): // eslint-disable-next-line @typescript-eslint/no-explicit-any
   IsAny<ReturnType<FN>> extends true
     ? Result<ReturnType<FN>>
+    : ReturnType<FN> extends void
+    ? Result<void>
     : // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ReturnType<FN> extends Promise<any>
     ? Promise<Result<Awaited<ReturnType<FN>>>>
