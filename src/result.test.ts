@@ -1,10 +1,6 @@
 import { expectType } from "tsd";
 import { Result, Ok, ok, Err, err } from "./exports";
 
-test("result", function () {
-  return;
-});
-
 expectType<Result<string, "FOO", { hello: string }>>(
   err("FOO").$info({ hello: "world" })
 );
@@ -35,3 +31,13 @@ expectType<
   >
   // @ts-expect-error "100" does not match of type number.
 >(err("BAZ").$info({ world: "100" }));
+
+test(".ok .err .fromThrowable", () => {
+  expect(Result.ok("foobar").ok).toBe(true);
+  expect(Result.err("FOOBAR_ERROR").ok).toBe(false);
+  expect(
+    Result.fromThrowable(() => {
+      throw new Error();
+    })()._error
+  ).toBeInstanceOf(Error);
+});

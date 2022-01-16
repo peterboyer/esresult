@@ -46,3 +46,27 @@ export type Result<
 > =
   | (OK_OR_VALUE extends OkAny ? OK_OR_VALUE : Ok<OK_OR_VALUE>)
   | (ERR_OR_ERROR extends ErrAny ? ERR_OR_ERROR : Err<ERR_OR_ERROR, INFO>);
+
+import * as _ok from "./ok";
+import * as _err from "./err";
+import * as _fromThrowable from "./from-throwable";
+
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace Result {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  export import Ok = _ok.Ok;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  export import OkAny = _ok.OkAny;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  export import ok = _ok.ok;
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  export import Err = _err.Err;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  export import ErrAny = _err.ErrAny;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  export import err = _err.err;
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  export import fromThrowable = _fromThrowable.fromThrowable;
+}
