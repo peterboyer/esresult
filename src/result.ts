@@ -47,12 +47,22 @@ export type Result<
   | (OK_OR_VALUE extends OkAny ? OK_OR_VALUE : Ok<OK_OR_VALUE>)
   | (ERR_OR_ERROR extends ErrAny ? ERR_OR_ERROR : Err<ERR_OR_ERROR, INFO>);
 
+export type ResultAsync<
+  OK_OR_VALUE = unknown,
+  ERR_OR_ERROR = unknown,
+  INFO = unknown
+> = Promise<Result<OK_OR_VALUE, ERR_OR_ERROR, INFO>>;
+
+import * as _result from ".";
 import * as _ok from "./ok";
 import * as _err from "./err";
 import * as _fromThrowable from "./from-throwable";
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Result {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  export import Async = _result.ResultAsync;
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   export import Ok = _ok.Ok;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

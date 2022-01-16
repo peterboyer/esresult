@@ -32,6 +32,8 @@ expectType<
   // @ts-expect-error "100" does not match of type number.
 >(err("BAZ").$info({ world: "100" }));
 
+expectType<Result.Async<string>>((async () => Result.ok("foobar"))());
+
 test(".ok .err .fromThrowable", () => {
   expect(Result.ok("foobar").ok).toBe(true);
   expect(Result.err("FOOBAR_ERROR").ok).toBe(false);
