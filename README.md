@@ -3,14 +3,13 @@
 </p>
 
 `esresult` is a zero-dependency, TypeScript-first utility for better
-error-handling patterns in your code.
+error-handling patterns in your code by making domain-specific errors an
+**explicit** part of a function's public API.
 
-It aims to help you build more resilient software by **forcing function callers
-to deal with possible domain-specific errors**, as opposed to easily forgotten
-try/catch blocks (or other emergent anti-patterns like brittle catch-all blocks
-that attempt to handle too much).
-
-**Domain-specific errors must be an explicit part of a function's public API**.
+By **forcing** function callers to deal with possible domain-specific errors you
+can build more transparent and resilient functionality, and circumvent a
+codebase littered with try/catch blocks or other emergent anti-patterns like
+brittle catch-all blocks that handle too much.
 
 Returning errors (instead of `throw`ing them) allows the caller to be aware of
 all possible domain-specific error values of a function, and allows for static
@@ -23,6 +22,8 @@ type-checking to help enforce correctness of error-handling logic.
 - **built-in data structure for error messages and info** for canonical error
   descriptions and/or contextual error information (e.g. data of a failing
   iteration in a loop).
+- **ok result with warnings** for idiomatic handling of partial success cases
+  where a valid value can be returned despite some non-critical errors.
 
 ## API
 
@@ -43,7 +44,7 @@ possible domain-specific `Err` types that the function may return (returned with
 `err(type)`).
 
 ```ts
-import { Result, Ok, ok, Err, err } from "esresult";
+import { Result, Ok, ok, Err, err, fromThrowable } from "esresult";
 ```
 
 
@@ -181,7 +182,7 @@ const a = $a.orUndefined(); // gracefully continue
 
 
 
-### Enrich your Errors, using `.info(...)` and `message(...)`.
+### Enrich your Errors, using `.info(...)` and `.message(...)`.
 
 All other Result/error-handling libraries only support a basic error primitive
 (e.g. string, Error-object, etc.) leaving the developer to implement their own
