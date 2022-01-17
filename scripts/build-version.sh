@@ -111,7 +111,7 @@ fi
 
 if [[ -n $SHA ]]; then
   SHA=$(git rev-parse --short HEAD)
-  PKG_VERSION_NEXT="$PKG_VERSION_NEXT+$SHA"
+  PKG_VERSION_NEXT="$PKG_VERSION_NEXT-sha.$SHA"
 
   # Apply the new version.
   (cd dist && yarn version --new-version $PKG_VERSION_NEXT --no-git-tag-version 1>/dev/null)
