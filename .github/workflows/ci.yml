@@ -76,8 +76,8 @@ jobs:
     env:
       # workaround https://github.com/JS-DevTools/npm-publish/issues/15
       INPUT_TOKEN: ""
-      # if "true" will release on experimental tag
-      EXPERIMENTAL: "true"
+      # if "true" will publish on the "sha" tag
+      PUBLISH_SHA: "true"
 
     runs-on: ubuntu-latest
     steps:
@@ -97,10 +97,10 @@ jobs:
           name: dist
           path: dist
 
-      - if: ${{ env.EXPERIMENTAL == '' }}
+      - if: ${{ env.PUBLISH_SHA == '' }}
         run: TAG= yarn build:version
 
-      - if: ${{ env.EXPERIMENTAL == 'true' }}
+      - if: ${{ env.PUBLISH_SHA == 'true' }}
         run: TAG= SHA= yarn build:version
 
       - uses: JS-DevTools/npm-publish@v1
@@ -108,7 +108,7 @@ jobs:
           token: ${{ secrets.NPM_TOKEN }}
           package: ./dist/package.json
           access: public
-          tag: ${{ env.EXPERIMENTAL == 'true' && 'experimental' || 'latest' }}
+          tag: ${{ env.PUBLISH_SHA == 'true' && 'sha' || 'latest' }}
           dry-run: true
 
       - uses: ad-m/github-push-action@master
