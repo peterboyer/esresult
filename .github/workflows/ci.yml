@@ -109,7 +109,6 @@ jobs:
           package: ./dist/package.json
           access: public
           tag: ${{ env.PUBLISH_SHA == 'true' && 'sha' || 'latest' }}
-          dry-run: true
 
       - uses: ad-m/github-push-action@master
         with:
