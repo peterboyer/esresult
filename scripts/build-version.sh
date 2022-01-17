@@ -2,6 +2,7 @@
 
 # TAG= env variable not-empty, then git tag with version.
 TAG=$(env | grep TAG)
+SHA=$(env | grep SHA)
 
 PKG_NAME=$(dot-json package.json name)
 PKG_VERSION_MAJOR=$(dot-json package.json version)
@@ -12,7 +13,9 @@ echo "[*] MAJOR: $PKG_VERSION_MAJOR"
 NPM_VERSIONS=$(npm info $PKG_NAME@\>=$PKG_VERSION_MAJOR version 2>/dev/null)
 
 if [[ -z $NPM_VERSIONS ]]; then
-  echo "[!] No existing deployments found. This is the first deployment!"
+  echo "[!] No deployments found >=$PKG_VERSION_MAJOR. New major deployment!"
+
+  echo "[!] Version: $PKG_VERSION_MAJOR"
 
   PKG_VERSION_NEXT=$PKG_VERSION_MAJOR
 
@@ -104,6 +107,16 @@ else
     echo "[!] fatal: Attempting to deploy an existing version!"
     exit 1
   fi
+fi
+
+if [[ -n $SHA ]]; then
+  SHA=$(git rev-parse --short HEAD)
+  PKG_VERSION_NEXT="$PKG_VERSION_NEXT+$SHA"
+
+  # Apply the new version.
+  (cd dist && yarn version --new-version $PKG_VERSION_NEXT --no-git-tag-version 1>/dev/null)
+
+  echo "[!] Version: SHA $PKG_VERSION_NEXT"
 fi
 
 # Tag repo with vVERSION tag on commit.

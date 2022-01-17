@@ -74,7 +74,11 @@ jobs:
       group: publish
       cancel-in-progress: true
     env:
+      # workaround https://github.com/JS-DevTools/npm-publish/issues/15
       INPUT_TOKEN: ""
+      # if "true" will release on experimental tag
+      EXPERIMENTAL: "true"
+
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -93,13 +97,19 @@ jobs:
           name: dist
           path: dist
 
-      - run: TAG= yarn build:version
+      - if: ${{ env.EXPERIMENTAL == '' }}
+        run: TAG= yarn build:version
+
+      - if: ${{ env.EXPERIMENTAL == 'true' }}
+        run: TAG= SHA= yarn build:version
 
       - uses: JS-DevTools/npm-publish@v1
         with:
           token: ${{ secrets.NPM_TOKEN }}
           package: ./dist/package.json
           access: public
+          tag: ${{ env.EXPERIMENTAL == 'true' && 'experimental' || 'latest' }}
+          dry-run: true
 
       - uses: ad-m/github-push-action@master
         with:
