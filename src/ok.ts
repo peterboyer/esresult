@@ -61,11 +61,11 @@ export class Ok<VALUE = unknown, WARNING = never> extends Base<
  * ```
  */
 
-export function ok<VALUE, PARTIAL = never>(
+export function ok<VALUE, WARNING = never>(
   value: VALUE,
   options?: {
-    warnings?: PARTIAL[];
+    warnings?: WARNING[];
   }
 ) {
-  return new Ok<VALUE, PARTIAL>(value, options);
+  return new Ok<VALUE, WARNING>(value, options);
 }

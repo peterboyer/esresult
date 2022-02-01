@@ -50,8 +50,8 @@ export type Result<
   ERR_OR_ERROR = unknown,
   INFO = unknown
 > =
-  | (OK_OR_VALUE extends OkAny ? OK_OR_VALUE : Ok<OK_OR_VALUE>)
-  | (ERR_OR_ERROR extends ErrAny ? ERR_OR_ERROR : Err<ERR_OR_ERROR, INFO>);
+  | ([OK_OR_VALUE] extends [OkAny] ? OK_OR_VALUE : Ok<OK_OR_VALUE>)
+  | ([ERR_OR_ERROR] extends [ErrAny] ? ERR_OR_ERROR : Err<ERR_OR_ERROR, INFO>);
 
 export type ResultAsync<
   OK_OR_VALUE = unknown,

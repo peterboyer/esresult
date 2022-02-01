@@ -3,6 +3,9 @@ import { Ok, ok, err, Err } from "./exports";
 
 // result types must match
 expectType<Ok<number>>(ok(100));
+expectType<Ok<boolean>>(ok(true));
+expectType<Ok<boolean>>(ok(true as boolean));
+expectType<Ok<boolean>>(ok(false as boolean));
 
 expectType<true>(ok("value").ok);
 expectType<string>(ok("value").value);

@@ -1,11 +1,27 @@
 import { expectType } from "tsd";
 import { Result, Ok, ok, Err, err } from "./exports";
 
+expectType<Result<string>>(Result.ok("" as string));
+expectType<Result<number>>(Result.ok(10 as number));
+expectType<Result<boolean>>(Result.ok(true as boolean));
+expectType<Result<boolean>>(Result.ok(false as boolean));
+expectType<Result<Ok<boolean>>>(Result.ok(true as boolean));
+expectType<Result<Ok<boolean>>>(Result.ok(false as boolean));
+expectType<Result<Result.Ok<boolean>>>(Result.ok(true as boolean));
+expectType<Result<Result.Ok<boolean>>>(Result.ok(false as boolean));
 expectType<Result<string, "FOO", { hello: string }>>(
   err("FOO").info({ hello: "world" })
 );
 
+expectType<Result<Result.Ok<boolean>>>(Result.err("SOMETHING"));
+// @ts-expect-error SOMETHING does not match FOOBAR
+expectType<Result<Result.Ok<boolean>, "FOOBAR">>(Result.err("SOMETHING"));
+
 expectType<Result<Ok<string>, "FOO", { hello: string }>>(ok("helloworld"));
+expectType<Result<boolean>["value"]>(true as boolean);
+expectType<Result<boolean>["value"]>(false as boolean);
+expectType<Result<boolean>["value"]>(ok(true as boolean).value as boolean);
+expectType<Result<boolean>["value"]>(ok(false as boolean).value as boolean);
 
 expectType<Result<Result.Ok<string>, "FOO", { hello: string }>>(
   Result.ok("helloworld")
