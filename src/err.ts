@@ -25,6 +25,13 @@ export class Err<ERROR = unknown, INFO = undefined> extends Base<
     this.#info = options?.info as INFO;
     this.#cause = options?.cause;
     this.#message = options?.message;
+
+    // @ts-expect-error Runtime debugging helper.
+    this._info = options?.info;
+    // @ts-expect-error Runtime debugging helper.
+    this._cause = options?.cause;
+    // @ts-expect-error Runtime debugging helper.
+    this._message = options?.message;
   }
 
   readonly #info: INFO;
