@@ -76,8 +76,8 @@ jobs:
     env:
       # workaround https://github.com/JS-DevTools/npm-publish/issues/15
       INPUT_TOKEN: ""
-      # ? UNCOMMENT BELOW: If "true" will publish on the "sha" tag.
-      # PUBLISH_SHA: "true"
+      # ? UNCOMMENT BELOW: If "y" will publish on the "sha" tag.
+      # PUBLISH_SHA: "y"
 
     runs-on: ubuntu-latest
     steps:
@@ -97,18 +97,18 @@ jobs:
           name: dist
           path: dist
 
-      - if: ${{ env.PUBLISH_SHA == '' }}
-        run: TAG= yarn build:version
+      - if: ${{ env.PUBLISH_SHA != 'y' }}
+        run: oTAG= yarn build:version
 
-      - if: ${{ env.PUBLISH_SHA == 'true' }}
-        run: TAG= SHA= yarn build:version
+      - if: ${{ env.PUBLISH_SHA == 'y' }}
+        run: oTAG= oSHA= yarn build:version
 
       - uses: JS-DevTools/npm-publish@v1
         with:
           token: ${{ secrets.NPM_TOKEN }}
           package: ./dist/package.json
           access: public
-          tag: ${{ env.PUBLISH_SHA == 'true' && 'sha' || 'latest' }}
+          tag: ${{ env.PUBLISH_SHA == 'y' && 'sha' || 'latest' }}
 
       - uses: ad-m/github-push-action@master
         with:

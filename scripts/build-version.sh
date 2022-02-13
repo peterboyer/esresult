@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-# TAG= env variable not-empty, then git tag with version.
-TAG=$(env | grep TAG)
-SHA=$(env | grep SHA)
+# oTAG= env variable not-empty, then git tag with version.
+oTAG=$(env | grep oTAG)
+oSHA=$(env | grep oSHA)
 
 PKG_NAME=$(dot-json package.json name)
 PKG_VERSION_MAJOR=$(dot-json package.json version)
@@ -109,7 +109,7 @@ else
   fi
 fi
 
-if [[ -n $SHA ]]; then
+if [[ -n $oSHA ]]; then
   SHA=$(git rev-parse --short HEAD)
   PKG_VERSION_NEXT="$PKG_VERSION_NEXT-sha.$SHA"
 
@@ -120,7 +120,7 @@ if [[ -n $SHA ]]; then
 fi
 
 # Tag repo with vVERSION tag on commit.
-if [[ -n $TAG ]]; then
+if [[ -n $oTAG ]]; then
   GIT_TAG=v$PKG_VERSION_NEXT
   git tag $GIT_TAG
   echo "[*] Tagged: $PKG_VERSION_NEXT"
