@@ -1,10 +1,5 @@
 #!/usr/bin/env bash
 
-# TEMP
-(cd dist && yarn version --new-version 2.0.1 --no-git-tag-version 1>/dev/null)
-git tag v2.0.1
-exit
-
 # oTAG= env variable not-empty, then git tag with version.
 oTAG=$(env | grep oTAG)
 oSHA=$(env | grep oSHA)
