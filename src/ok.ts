@@ -33,14 +33,14 @@ export class Ok<VALUE = unknown, WARNING = never> extends Base<
   }
 
   warnings(): WARNING[] | undefined;
-  warnings<T>(setErrors: T): Ok<VALUE, WARNING>;
-  warnings<T>(setErrors?: T[]): WARNING[] | undefined | Ok<VALUE, T> {
-    if (setErrors === undefined) {
+  warnings<T>(setWarnings: T): Ok<VALUE, WARNING>;
+  warnings<T>(setWarnings?: T[]): WARNING[] | undefined | Ok<VALUE, T> {
+    if (setWarnings === undefined) {
       if (!this.#warnings?.length) return undefined;
       return this.#warnings;
     }
     return new Ok(this.value, {
-      warnings: setErrors,
+      warnings: setWarnings,
     });
   }
 }
