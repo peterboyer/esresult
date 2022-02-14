@@ -1,4 +1,5 @@
 import { Base } from "./base";
+import { ErrAny, AsErr } from "./err";
 
 /**
  * Alias for any compatible Ok without default constraints.
@@ -13,17 +14,17 @@ export class Ok<VALUE = unknown, WARNING = never> extends Base<
   constructor(
     value: VALUE,
     options?: {
-      warnings?: WARNING[];
+      warnings?: AsErr<WARNING>[];
     }
   ) {
     super(true, { value });
-    this.#warnings = options?.warnings as WARNING[];
+    this.#warnings = options?.warnings as AsErr<WARNING>[];
 
     // @ts-expect-error Runtime debugging helper.
     this._warnings = options?.warnings;
   }
 
-  readonly #warnings?: WARNING[];
+  readonly #warnings?: AsErr<WARNING>[];
 
   toObject() {
     return {
@@ -32,9 +33,11 @@ export class Ok<VALUE = unknown, WARNING = never> extends Base<
     };
   }
 
-  warnings(): WARNING[] | undefined;
-  warnings<T>(setWarnings: T): Ok<VALUE, WARNING>;
-  warnings<T>(setWarnings?: T[]): WARNING[] | undefined | Ok<VALUE, T> {
+  warnings(): AsErr<WARNING>[] | undefined;
+  warnings<T extends ErrAny>(setWarnings: AsErr<T>[]): Ok<VALUE, T>;
+  warnings<T extends ErrAny>(
+    setWarnings?: AsErr<T>[]
+  ): AsErr<WARNING>[] | undefined | Ok<VALUE, T> {
     if (setWarnings === undefined) {
       if (!this.#warnings?.length) return undefined;
       return this.#warnings;
@@ -67,8 +70,12 @@ export class Ok<VALUE = unknown, WARNING = never> extends Base<
 export function ok<VALUE, WARNING = never>(
   value: VALUE,
   options?: {
-    warnings?: WARNING[];
+    warnings?: AsErr<WARNING>[];
   }
 ) {
   return new Ok<VALUE, WARNING>(value, options);
 }
+
+export type AsOk<OK_OR_VALUE> = [OK_OR_VALUE] extends [OkAny]
+  ? OK_OR_VALUE
+  : Ok<OK_OR_VALUE>;

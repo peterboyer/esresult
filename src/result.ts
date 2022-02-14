@@ -1,5 +1,5 @@
-import { Ok, OkAny } from "./ok";
-import { Err, ErrAny } from "./err";
+import { AsOk } from "./ok";
+import { AsErr } from "./err";
 
 /**
  * Given OK and/or ERR, creates a union of `Ok` and `Err` respectively. You may
@@ -49,9 +49,7 @@ export type Result<
   OK_OR_VALUE = unknown,
   ERR_OR_ERROR = unknown,
   INFO = unknown
-> =
-  | ([OK_OR_VALUE] extends [OkAny] ? OK_OR_VALUE : Ok<OK_OR_VALUE>)
-  | ([ERR_OR_ERROR] extends [ErrAny] ? ERR_OR_ERROR : Err<ERR_OR_ERROR, INFO>);
+> = AsOk<OK_OR_VALUE> | AsErr<ERR_OR_ERROR, INFO>;
 
 export type ResultAsync<
   OK_OR_VALUE = unknown,

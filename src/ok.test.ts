@@ -23,7 +23,21 @@ expectType<Err<"FOO" | "BAR">[] | undefined>(
     .warnings([err("FOO"), err("BAR"), err("FOO")] as Err<"FOO" | "BAR">[])
     .warnings()
 );
-expectType<Ok<number, Err<"FOOBAR">>>(ok(100).warnings([err("FOOBAR")]));
+
+// TODO: Uncommented: Is this an issue?
+// expectType<Ok<boolean, "FOO">>(ok(true).warnings([err("FOO")]));
+
+expectType<Ok<boolean, Err<"FOO">>>(ok(true).warnings([err("FOO")]));
+
+// @ts-expect-error Reject a non-array value.
+expectType<Ok<boolean, "FOO">>(ok(true).warnings("FOO"));
+// @ts-expect-error Reject a non-array value.
+expectType<Ok<boolean, "FOO">>(ok(true).warnings(err("FOO")));
+
+// @ts-expect-error BAR not assignable to FOO.
+expectType<Ok<boolean, "FOO">>(ok(true).warnings([err("BAR")]));
+// @ts-expect-error BAR not assignable to FOO.
+expectType<Ok<boolean, Err<"FOO">>>(ok(true).warnings([err("BAR")]));
 
 // to be okay with partial errors with INFOs as interfaces
 interface MyInterface {
@@ -62,7 +76,7 @@ test("with .orUndefined() expect value", () => {
   expect($.orUndefined()).toBe("value");
 });
 
-test("with partialErrors", () => {
+test("with warnings", () => {
   const warnings = [err("ERR1"), err("ERR2"), err("ERR3")];
   const $ = ok("value").warnings(warnings);
   expect($.ok).toBe(true);
@@ -70,7 +84,7 @@ test("with partialErrors", () => {
   expect($.ok && $.warnings()?.length).toBe(3);
 });
 
-test("with partialErrors as empty array", () => {
+test("with warnings as empty array", () => {
   const warnings: Err<"ERR">[] = [];
   const $ = ok("value", { warnings });
   expect($.ok && $.warnings()).toBeUndefined();

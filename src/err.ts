@@ -142,3 +142,9 @@ export function err<ERROR extends string, INFO = undefined>(
 err.primitive = function errPrimitive<ERROR>(error: ERROR): Err<ERROR> {
   return new Err(error);
 };
+
+export type AsErr<ERR_OR_ERROR, INFO = unknown> = [ERR_OR_ERROR] extends [
+  ErrAny
+]
+  ? ERR_OR_ERROR
+  : Err<ERR_OR_ERROR, INFO>;
