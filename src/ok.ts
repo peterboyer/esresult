@@ -19,9 +19,6 @@ export class Ok<VALUE = unknown, WARNING = never> extends Base<
   ) {
     super(true, { value });
     this.#warnings = options?.warnings as AsErr<WARNING>[];
-
-    // @ts-expect-error Runtime debugging helper.
-    this._warnings = options?.warnings;
   }
 
   readonly #warnings?: AsErr<WARNING>[];
