@@ -28,22 +28,20 @@ export class Ok<VALUE = unknown, WARNING = never> extends Base<
 
   toObject() {
     return {
+      ok: this.ok,
       value: this.error,
-      warnings: this.warnings(),
+      warnings: this.warnings,
     };
   }
 
-  warnings(): AsErr<WARNING>[] | undefined;
-  warnings<T extends ErrAny>(setWarnings: AsErr<T>[]): Ok<VALUE, T>;
-  warnings<T extends ErrAny>(
-    setWarnings?: AsErr<T>[]
-  ): AsErr<WARNING>[] | undefined | Ok<VALUE, T> {
-    if (setWarnings === undefined) {
-      if (!this.#warnings?.length) return undefined;
-      return this.#warnings;
-    }
+  get warnings(): AsErr<WARNING>[] | undefined {
+    if (!this.#warnings?.length) return undefined;
+    return this.#warnings;
+  }
+
+  $warnings<T extends ErrAny>(warnings: AsErr<T>[]): Ok<VALUE, T> {
     return new Ok(this.value, {
-      warnings: setWarnings,
+      warnings,
     });
   }
 }

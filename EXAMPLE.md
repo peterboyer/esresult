@@ -13,7 +13,7 @@ async function foo(...) {
   if ($user.error === "NOT_FOUND") return ok(undefined);
 
   // yay: provide a function-domain specific error + ref. of `cause`
-  if (!$user.ok) return err("GET_USER_ERROR").cause($user);
+  if (!$user.ok) return err("GET_USER_ERROR").setCause($user);
 
   // yay: handled the error, now safely use the expected value.
   const user = $user.value;

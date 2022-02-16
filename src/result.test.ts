@@ -10,7 +10,7 @@ expectType<Result<Ok<boolean>>>(Result.ok(false as boolean));
 expectType<Result<Result.Ok<boolean>>>(Result.ok(true as boolean));
 expectType<Result<Result.Ok<boolean>>>(Result.ok(false as boolean));
 expectType<Result<string, "FOO", { hello: string }>>(
-  err("FOO").info({ hello: "world" })
+  err("FOO").$info({ hello: "world" })
 );
 
 expectType<Result<Result.Ok<boolean>>>(Result.err("SOMETHING"));
@@ -35,14 +35,14 @@ expectType<
     string,
     Err<"FOO", { hello: string }> | Err<"BAR" | "BAZ", { world: number }>
   >
->(err("FOO").info({ hello: "world" }));
+>(err("FOO").$info({ hello: "world" }));
 
 expectType<
   Result<
     string,
     Err<"FOO", { hello: string }> | Err<"BAR" | "BAZ", { world: number }>
   >
->(err("BAZ").info({ world: 100 }));
+>(err("BAZ").$info({ world: 100 }));
 
 expectType<
   Result<
@@ -50,7 +50,7 @@ expectType<
     Err<"FOO", { hello: string }> | Err<"BAR" | "BAZ", { world: number }>
   >
   // @ts-expect-error "100" does not match of type number.
->(err("BAZ").info({ world: "100" }));
+>(err("BAZ").$info({ world: "100" }));
 
 expectType<Result.Async<string>>((async () => Result.ok("foobar"))());
 

@@ -11,19 +11,19 @@ expectType<"CODE">(err("CODE").error);
 // union of err should union .error attributes
 expectType<"AAA" | "BBB">([err("AAA").error, err("BBB").error][0]);
 // err without given info should be undefined
-expectType<undefined>(err("CCC").info());
+expectType<undefined>(err("CCC").info);
 // err with given info should be correctly assigned/generic
-expectType<{ a: number }>(err("CCC", { info: { a: 1337 } }).info());
+expectType<{ a: number }>(err("CCC", { info: { a: 1337 } }).info);
 // err with later assigned info should be correctly assigned
-expectType<{ a: number }>(err("CCC").info({ a: 1337 }).info());
+expectType<{ a: number }>(err("CCC").$info({ a: 1337 }).info);
 // err with later assigned info + message should still be correctly assigned
 expectType<{ a: number }>(
-  err("CCC").info({ a: 1337 }).message("Something.").info()
+  err("CCC").$info({ a: 1337 }).$message("Something.").info
 );
 // err cause with unknown error
 {
   const $: Result<unknown> = err("SOMETHING");
-  !$.ok ? err("CCC").cause($) : undefined;
+  !$.ok ? err("CCC").$cause($) : undefined;
 }
 // err with info as interface instead of a plain object/record should be ok
 interface MyInterface {
@@ -31,9 +31,8 @@ interface MyInterface {
 }
 expectType<MyInterface>(
   err("CCC")
-    .info({} as MyInterface)
-    .message("Something.")
-    .info()
+    .$info({} as MyInterface)
+    .$message("Something.").info
 );
 
 test("with type only", () => {
@@ -76,9 +75,9 @@ test("with .error check with instanceof", () => {
   expect($.error instanceof SyntaxError).toBe(false);
 });
 
-test("with .cause(...)", () => {
+test("with .setCause(...)", () => {
   const $x = err("FAILED");
-  const $ = err("FOOBAR").cause($x);
+  const $ = err("FOOBAR").$cause($x);
   expect($.toObject()).toMatchObject({
     error: "FOOBAR",
     cause: {
@@ -87,8 +86,8 @@ test("with .cause(...)", () => {
   });
 });
 
-test("with .info(...)", () => {
-  const $ = err("FOOBAR").info({ foo: "bar", fin: "baz" });
+test("with .setInfo(...)", () => {
+  const $ = err("FOOBAR").$info({ foo: "bar", fin: "baz" });
   expect($.toObject()).toMatchObject({
     error: "FOOBAR",
     info: {
@@ -98,8 +97,8 @@ test("with .info(...)", () => {
   });
 });
 
-test("with .message(...)", () => {
-  const $ = err("FOOBAR").message("My error message.");
+test("with .setMessage(...)", () => {
+  const $ = err("FOOBAR").$message("My error message.");
   expect($.toObject()).toMatchObject({
     error: "FOOBAR",
     message: "My error message.",
@@ -109,9 +108,9 @@ test("with .message(...)", () => {
 test("with stacked info|message|cause", () => {
   const $x = err("FAILED");
   const $ = err("FOOBAR")
-    .info({ foo: "bar", fin: "baz" })
-    .message("Something went wrong...")
-    .cause($x);
+    .$info({ foo: "bar", fin: "baz" })
+    .$message("Something went wrong...")
+    .$cause($x);
   expect($.toObject()).toMatchObject({
     error: "FOOBAR",
     info: {

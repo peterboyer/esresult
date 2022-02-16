@@ -113,7 +113,7 @@ function foo(source: string): Result<number, "INVALID" | "TOO_BIG"> {
     return err("INVALID");
 
   if (result > 100)
-    return err("TOO_BIG").info({ max: 100 });
+    return err("TOO_BIG").$info({ max: 100 });
 
   return ok(result);
 }
@@ -135,11 +135,11 @@ const a = $a.value;
 
 
 
-### Create an Error chain, using `.cause(...)`.
+### Create an Error chain, using `.$cause(...)`.
 
 Rather than wrapping many statements in their own try/catch closures (which are
 annoying when trying to use `const` for assignments), you can handle returned
-`Result` objects and their values directly. `Err` objects support `.cause(Err)`
+`Result` objects and their values directly. `Err` objects support `.$cause(Err)`
 to allow domain-space casual-chaining of errors that make debugging and
 reporting a breeze.
 
@@ -147,7 +147,7 @@ reporting a breeze.
 const $a = foo("100");
 if (!$a.ok) {
   // return a new error, and track its cause
-  return err("FOO_ERROR").cause($a);
+  return err("FOO_ERROR").$cause($a);
 }
 const a = $a.value;
 ```
@@ -175,14 +175,14 @@ const a = foo("100").or("50"); // ts: error: "50" is not of type: number
 const $a = foo("100");
 if ($a.error === "FOOBAR") {
 //               ^ ts: error: can only be: "INVALID" | "TOO_BIG"
-  return err("CRITICAL_ERROR").cause($a);
+  return err("CRITICAL_ERROR").$cause($a);
 }
 const a = $a.orUndefined(); // gracefully continue
 ```
 
 
 
-### Enrich your Errors, using `.info(...)` and `.message(...)`.
+### Enrich your Errors, using `.$info(...)` and `.$message(...)`.
 
 All other Result/error-handling libraries only support a basic error primitive
 (e.g. string, Error-object, etc.) leaving the developer to implement their own
@@ -192,15 +192,15 @@ supports adding this information out-of-the-box.
 
 ```ts
 const $ = err("QUERY_ERROR")
-  .cause($response) // details on the cause, e.g. network error?
-  .info({ url: requestUrl, query, variables }) // relevant context details
-  .message("Unable to communicate with the server.") // human readable
+  .$cause($response) // details on the cause, e.g. network error?
+  .$info({ url: requestUrl, query, variables }) // relevant context details
+  .$message("Unable to communicate with the server.") // human readable
 
-$.cause()
+$.cause
 //      ^ type: Err<unknown, unknown> (causal chains are not generic)
-$.info().
+$.info.
 //      ^ intellisense: "url" | "query" | "variables"
-$.message()
+$.message
 //        ^ type: string
 ```
 
@@ -225,12 +225,12 @@ check for any partial errors, instead of the needless verbose
 const okItems: FooItem[] = [];
 const itemWarnings: Err<"INVALID" | "OUT_OF_RANGE">[] = [];
 
-const $ = ok(okItems).warnings(itemErrors);
+const $ = ok(okItems).$warnings(itemErrors);
 const $ = ok(okItems, { warnings: itemErrors });
 
 $.value
 //    ^ type: FooItem[]
-$.warnings()
+$.warnings
 //         ^ type: undefined | Err<"INVALID" | "OUT_OF_RANGE">[]
 ```
 
@@ -251,7 +251,7 @@ const safeFn = fromThrowable(fn);
 const $result = safeFn(...);
 
 // thrown error is available as `$result.error`
-if (!$result.ok) return err(...).cause($result);
+if (!$result.ok) return err(...).$cause($result);
 ```
 
 

@@ -25,13 +25,6 @@ export class Err<ERROR = unknown, INFO = undefined> extends Base<
     this.#info = options?.info as INFO;
     this.#cause = options?.cause;
     this.#message = options?.message;
-
-    // @ts-expect-error Runtime debugging helper.
-    this._info = options?.info;
-    // @ts-expect-error Runtime debugging helper.
-    this._cause = options?.cause;
-    // @ts-expect-error Runtime debugging helper.
-    this._message = options?.message;
   }
 
   readonly #info: INFO;
@@ -40,50 +33,54 @@ export class Err<ERROR = unknown, INFO = undefined> extends Base<
 
   toObject() {
     return {
+      ok: this.ok,
       error: this.error,
-      info: this.info(),
-      cause: this.cause(),
-      message: this.message(),
+      info: this.info,
+      cause: this.cause,
+      message: this.message,
     };
   }
 
-  info(): INFO;
-  info<T>(setInfo: T): Err<ERROR, T>;
-  info<T>(setInfo?: T): INFO | Err<ERROR, T> {
-    if (setInfo === undefined) return this.#info;
+  get info(): INFO {
+    return this.#info;
+  }
+
+  $info<T>(info?: T): Err<ERROR, T> {
     return new Err(this.error, {
-      info: setInfo,
+      info,
       cause: this.#cause,
       message: this.#message,
     });
   }
 
-  cause(): Cause;
-  cause(setCause: Cause): Err<ERROR, INFO>;
-  cause(setCause?: Cause): Cause | Err<ERROR, INFO> {
-    if (setCause === undefined) return this.#cause;
+  get cause(): Cause {
+    return this.#cause;
+  }
+
+  $cause(cause?: Cause): Err<ERROR, INFO> {
     return new Err(this.error, {
       info: this.#info,
-      cause: setCause,
+      cause,
       message: this.#message,
     });
   }
 
-  message(): Message;
-  message(setMessage: Message): Err<ERROR, INFO>;
-  message(setMessage?: Message): Message | Err<ERROR, INFO> {
-    if (setMessage === undefined) return this.#message;
+  get message(): Message {
+    return this.#message;
+  }
+
+  $message(message: Message): Err<ERROR, INFO> {
     return new Err(this.error, {
       info: this.#info,
       cause: this.#cause,
-      message: setMessage,
+      message,
     });
   }
 }
 
 /**
  * Creates a new `Err` object with given error string and optional properties.
- * You will often use `err(...).cause(...)` to create an error chain that is
+ * You will often use `err(...).setCause(...)` to create an error chain that is
  * useful for debugging, error-reporting, and/or control-flow.
  *
  * @param error An error string that may be used to discriminate error types.
@@ -95,12 +92,12 @@ export class Err<ERROR = unknown, INFO = undefined> extends Base<
  * const $ = err("INVALID");
  * const $ = err("INVALID", {});
  * const $ = err("INVALID", { message: "Message.", info: { a: 1 } });
- * const $ = err("INVALID").cause($previous);
+ * const $ = err("INVALID").setCause($previous);
  * const $ = err("INVALID", { cause: $previous });
  * return err("INVALID")
- *   .cause($previous)
- *   .info({ a: 1 })
- *   .message("Something went wrong.");
+ *   .setCause($previous)
+ *   .setInfo({ a: 1 })
+ *   .setMessage("Something went wrong.");
  *
  * $.ok // false
  * $.error // "INVALID"

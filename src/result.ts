@@ -27,10 +27,10 @@ import { AsErr } from "./err";
  * $.error => "INVALID" | "MISMATCH"
  *
  * Result<string, "INVALID", { input: string }>
- * $.error === "INVALID"  // $.info() => { input: string }
+ * $.error === "INVALID"  // $.info => { input: string }
  *
  * Result<string, Err<"INVALID", { input: string }>>
- * $.error === "INVALID"  // $.info() => { input: string }
+ * $.error === "INVALID"  // $.info => { input: string }
  *
  * Result<
  *   | Ok<string>,
@@ -38,10 +38,10 @@ import { AsErr } from "./err";
  *   | Err<"MISMATCH", { input: string; expected: string }>
  *   | Err<"FOO" | "BAR", { test: string }>
  * >
- * $.error === "INVALID"  // $.info() => { input, issues }
- * $.error === "MISMATCH" // $.info() => { input, expected }
- * $.error === "FOO"      // $.info() => { test }
- * $.error === "BAR"      // $.info() => { test }
+ * $.error === "INVALID"  // $.info => { input, issues }
+ * $.error === "MISMATCH" // $.info => { input, expected }
+ * $.error === "FOO"      // $.info => { test }
+ * $.error === "BAR"      // $.info => { test }
  * ```
  */
 

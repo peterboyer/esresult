@@ -9,7 +9,7 @@
       "disableOptimisticBPs": true,
       "cwd": "${workspaceFolder}",
       "runtimeExecutable": "yarn",
-      "args": ["test", "--runInBand", "--watchAll=false"]
+      "args": ["jest", "--runInBand", "--watchAll=false"]
     }
   ]
 }
