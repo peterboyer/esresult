@@ -12,8 +12,6 @@ expectType<"CODE">(err("CODE").error);
 expectType<"AAA" | "BBB">([err("AAA").error, err("BBB").error][0]);
 // err without given info should be undefined
 expectType<undefined>(err("CCC").info);
-// err with given info should be correctly assigned/generic
-expectType<{ a: number }>(err("CCC", { info: { a: 1337 } }).info);
 // err with later assigned info should be correctly assigned
 expectType<{ a: number }>(err("CCC").$info({ a: 1337 }).info);
 // err with later assigned info + message should still be correctly assigned
@@ -34,6 +32,19 @@ expectType<MyInterface>(
     .$info({} as MyInterface)
     .$message("Something.").info
 );
+// union of Err with and without info definitions, adding A without info
+{
+  type MyError =
+    | Err<"A">
+    | Err<"B", { bProp: string }>
+    | Err<"C", { cProp: number }>;
+
+  const errors = new Set<MyError>();
+  errors.add(err("A"));
+  errors.add(err("A").$info(undefined));
+  errors.add(err("B").$info({ bProp: "abc" }));
+  errors.add(err("C").$info({ cProp: 123 }));
+}
 
 test("with type only", () => {
   const $ = err("FOOBAR");
@@ -42,7 +53,7 @@ test("with type only", () => {
 });
 
 test("with type + message", () => {
-  const $ = err("FOOBAR", { message: "Foo required Bar." });
+  const $ = err("FOOBAR").$message("Foo required Bar.");
   expect($.toObject()).toMatchObject({
     error: "FOOBAR",
     message: "Foo required Bar.",
@@ -50,8 +61,8 @@ test("with type + message", () => {
 });
 
 test("with type + cause (with info)", () => {
-  const $x = err("FAILED", { info: { foobar: 420 } });
-  const $ = err("FOOBAR", { cause: $x });
+  const $x = err("FAILED").$info({ foobar: 420 });
+  const $ = err("FOOBAR").$cause($x);
   const _$ = $.toObject();
   expect(_$).toMatchObject({
     error: "FOOBAR",
@@ -191,11 +202,5 @@ describe("err.primitive", () => {
   test("with error", () => {
     const $ = err.primitive(new TypeError());
     expect(!$.ok && $.error).toMatchObject(new TypeError());
-  });
-});
-
-describe("deprecations", () => {
-  test("pass", () => {
-    expect(true).toBeTruthy();
   });
 });

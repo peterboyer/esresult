@@ -11,7 +11,7 @@ expectType<true>(ok("value").ok);
 expectType<string>(ok("value").value);
 expectType<never[] | undefined>(ok("value").warnings);
 expectType<Err<"FOOBAR">[] | undefined>(
-  ok("value", { warnings: [].map(() => err("FOOBAR")) }).warnings
+  ok("value").$warnings([].map(() => err("FOOBAR"))).warnings
 );
 expectType<Err<"FOOBAR">[] | undefined>(
   ok("value").$warnings([].map(() => err("FOOBAR"))).warnings
@@ -83,6 +83,6 @@ test("with warnings", () => {
 
 test("with warnings as empty array", () => {
   const warnings: Err<"ERR">[] = [];
-  const $ = ok("value", { warnings });
+  const $ = ok("value").$warnings(warnings);
   expect($.ok && $.warnings).toBeUndefined();
 });

@@ -13,23 +13,13 @@ export class Err<ERROR = unknown, INFO = undefined> extends Base<
   undefined,
   ERROR
 > {
-  constructor(
-    error: ERROR,
-    options?: {
-      info?: INFO;
-      cause?: Cause;
-      message?: Message;
-    }
-  ) {
+  constructor(error: ERROR) {
     super(false, { error });
-    this.#info = options?.info as INFO;
-    this.#cause = options?.cause;
-    this.#message = options?.message;
   }
 
-  readonly #info: INFO;
-  readonly #cause: Cause = undefined;
-  readonly #message: Message = undefined;
+  private _info: INFO = undefined as unknown as INFO;
+  private _cause: Cause = undefined;
+  private _message: Message = undefined;
 
   toObject() {
     return {
@@ -42,38 +32,38 @@ export class Err<ERROR = unknown, INFO = undefined> extends Base<
   }
 
   get info(): INFO {
-    return this.#info;
+    return this._info;
   }
 
   $info<T>(info?: T): Err<ERROR, T> {
-    return new Err(this.error, {
-      info,
-      cause: this.#cause,
-      message: this.#message,
+    return Object.assign(new Err<ERROR, T>(this.error), {
+      _info: info,
+      _cause: this._cause,
+      _message: this._message,
     });
   }
 
   get cause(): Cause {
-    return this.#cause;
+    return this._cause;
   }
 
   $cause(cause?: Cause): Err<ERROR, INFO> {
-    return new Err(this.error, {
-      info: this.#info,
-      cause,
-      message: this.#message,
+    return Object.assign(new Err<ERROR, INFO>(this.error), {
+      _info: this._info,
+      _cause: cause,
+      _message: this._message,
     });
   }
 
   get message(): Message {
-    return this.#message;
+    return this._message;
   }
 
   $message(message: Message): Err<ERROR, INFO> {
-    return new Err(this.error, {
-      info: this.#info,
-      cause: this.#cause,
-      message,
+    return Object.assign(new Err<ERROR, INFO>(this.error), {
+      _info: this._info,
+      _cause: this._cause,
+      _message: message,
     });
   }
 }
@@ -108,15 +98,8 @@ export class Err<ERROR = unknown, INFO = undefined> extends Base<
  * $.orUndefined() // undefined
  * ```
  */
-export function err<ERROR extends string, INFO = undefined>(
-  error: ERROR,
-  options?: {
-    info?: INFO;
-    cause?: Cause;
-    message?: Message;
-  }
-) {
-  return new Err<ERROR, INFO>(error, options);
+export function err<ERROR extends string>(error: ERROR) {
+  return new Err<ERROR, undefined>(error);
 }
 
 /**

@@ -11,17 +11,11 @@ export class Ok<VALUE = unknown, WARNING = never> extends Base<
   VALUE,
   undefined
 > {
-  constructor(
-    value: VALUE,
-    options?: {
-      warnings?: AsErr<WARNING>[];
-    }
-  ) {
+  constructor(value: VALUE) {
     super(true, { value });
-    this.#warnings = options?.warnings as AsErr<WARNING>[];
   }
 
-  readonly #warnings?: AsErr<WARNING>[];
+  private _warnings: AsErr<WARNING>[] | undefined = undefined;
 
   toObject() {
     return {
@@ -32,13 +26,13 @@ export class Ok<VALUE = unknown, WARNING = never> extends Base<
   }
 
   get warnings(): AsErr<WARNING>[] | undefined {
-    if (!this.#warnings?.length) return undefined;
-    return this.#warnings;
+    if (!this._warnings?.length) return undefined;
+    return this._warnings;
   }
 
   $warnings<T extends ErrAny>(warnings: AsErr<T>[]): Ok<VALUE, T> {
-    return new Ok(this.value, {
-      warnings,
+    return Object.assign(new Ok(this.value), {
+      _warnings: warnings,
     });
   }
 }
@@ -62,13 +56,8 @@ export class Ok<VALUE = unknown, WARNING = never> extends Base<
  * ```
  */
 
-export function ok<VALUE, WARNING = never>(
-  value: VALUE,
-  options?: {
-    warnings?: AsErr<WARNING>[];
-  }
-) {
-  return new Ok<VALUE, WARNING>(value, options);
+export function ok<VALUE>(value: VALUE) {
+  return new Ok<VALUE, never>(value);
 }
 
 export type AsOk<OK_OR_VALUE> = [OK_OR_VALUE] extends [OkAny]
