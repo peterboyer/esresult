@@ -4,7 +4,7 @@
   "description": "Result monad with useful error handling features.",
   "private": false,
   "repository": "github:ptboyer/esresult",
-  "author": "Peter Boyer (https://github.com/ptboyer)",
+  "author": "Peter Boyer <https://github.com/ptboyer>",
   "license": "Apache-2.0",
   "main": "index.js",
   "scripts": {
