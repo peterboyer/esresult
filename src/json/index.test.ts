@@ -1,4 +1,11 @@
+import { expectType } from "tsd";
+import { type Result } from "../result";
 import { JSON } from "../json";
+
+{
+  expectType<Result<string>>(JSON.stringify(""));
+  expectType<Result<unknown>>(JSON.parse(""));
+}
 
 test("stringify to ok on valid", () => {
   const $ = JSON.stringify({ foo: "bar" });
