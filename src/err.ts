@@ -55,6 +55,43 @@ export class Err<ERROR = unknown, INFO = undefined> extends Base<
     });
   }
 
+  /**
+   * Walks all .cause properties and maps to an array.
+   * @param fn Optional callback to map on each error item.
+   * @returns Array of mapped error item results.
+   */
+  causeMap<
+    FN extends (cause: ErrAny | Error) => unknown = typeof Err.causeMapFnDefault
+  >(fn?: FN): ReturnType<FN>[] {
+    const _fn = fn ?? Err.causeMapFnDefault;
+    const map: ReturnType<FN>[] = [_fn(this) as ReturnType<FN>];
+    function walk(error: ErrAny) {
+      if (!error.cause) return;
+      map.push(_fn(error.cause) as ReturnType<FN>);
+      if (error.cause instanceof Err) {
+        walk(error.cause);
+      }
+    }
+    walk(this);
+    return map;
+  }
+
+  /**
+   * Return all Errors as is.
+   */
+  static causeMapFnDefault(cause: ErrAny | Error): ErrAny | Error {
+    return cause;
+  }
+
+  /**
+   * Return errors as human-readable strings.
+   */
+  static causeMapFnString(cause: ErrAny | Error): string {
+    return cause instanceof Err
+      ? `${cause.error}`
+      : `${cause.name}("${cause.message}")`;
+  }
+
   get message(): Message {
     return this._message;
   }

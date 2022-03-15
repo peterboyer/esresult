@@ -147,6 +147,39 @@ test("with .orUndefined() expect undefined", () => {
   expect($.orUndefined()).toBeUndefined();
 });
 
+test("with .causeMap on causeless", () => {
+  const $ = err("FOO");
+  expect($.causeMap()).toMatchObject([err("FOO")]);
+  expect($.causeMap()).not.toMatchObject([err("BAR")]);
+});
+
+test("with .causeMap expect chain of error strings", () => {
+  const $ = err("A").$cause(
+    err("B").$cause(err("C").$cause(new TypeError("Divide by zero.")))
+  );
+  expect($.causeMap(Err.causeMapFnString)).toMatchObject([
+    "A",
+    "B",
+    "C",
+    'TypeError("Divide by zero.")',
+  ]);
+});
+
+test("with .causeMap with custom callback", () => {
+  const $ = err("A").$cause(
+    err("B").$cause(err("C").$cause(new TypeError("Divide by zero.")))
+  );
+  expect(
+    $.causeMap(
+      (cause) =>
+        (cause instanceof Err
+          ? `${cause.error}`
+          : `${cause.name}("${cause.message}")`
+        ).length
+    )
+  ).toMatchObject([1, 1, 1, 28]);
+});
+
 describe("ok|err union", () => {
   function fn(z: string) {
     if (z === "1") return err("AAA");
