@@ -5,7 +5,14 @@
     "paths": {
       "esresult": ["./index.ts"],
       "esresult/json": ["./json/index.ts"]
-    }
+    },
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "noImplicitReturns": true,
+    "noImplicitOverride": true,
+    "noUncheckedIndexedAccess": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noFallthroughCasesInSwitch": true
   },
   "include": ["src"],
   "exclude": ["dist"]
