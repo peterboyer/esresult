@@ -5,7 +5,7 @@
   "private": false,
   "repository": "github:ptboyer/esresult",
   "author": "Peter Boyer <https://github.com/ptboyer>",
-  "license": "Apache-2.0",
+  "license": "MIT",
   "main": "index.js",
   "scripts": {
     "prepare": "husky install",
