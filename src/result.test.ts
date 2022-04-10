@@ -1,60 +1,285 @@
-import { expectType } from "tsd";
-import { Result, Ok, ok, Err, err } from "./exports";
+import Result, { type Thrown } from "./result";
 
-expectType<Result<string>>(Result.ok("" as string));
-expectType<Result<number>>(Result.ok(10 as number));
-expectType<Result<boolean>>(Result.ok(true as boolean));
-expectType<Result<boolean>>(Result.ok(false as boolean));
-expectType<Result<Ok<boolean>>>(Result.ok(true as boolean));
-expectType<Result<Ok<boolean>>>(Result.ok(false as boolean));
-expectType<Result<Result.Ok<boolean>>>(Result.ok(true as boolean));
-expectType<Result<Result.Ok<boolean>>>(Result.ok(false as boolean));
-expectType<Result<string, "FOO", { hello: string }>>(
-  err("FOO").$info({ hello: "world" })
-);
+////////////////////////////////////////////////////////////////////////////////
 
-expectType<Result<Result.Ok<boolean>>>(Result.err("SOMETHING"));
-// @ts-expect-error SOMETHING does not match FOOBAR
-expectType<Result<Result.Ok<boolean>, "FOOBAR">>(Result.err("SOMETHING"));
+import { expectNotType, expectType } from "tsd";
 
-expectType<Result<Ok<string>, "FOO", { hello: string }>>(ok("helloworld"));
-expectType<Result<boolean>["value"]>(true as boolean);
-expectType<Result<boolean>["value"]>(false as boolean);
-expectType<Result<boolean>["value"]>(ok(true as boolean).value as boolean);
-expectType<Result<boolean>["value"]>(ok(false as boolean).value as boolean);
+////////////////////////////////////////////////////////////////////////////////
 
-expectType<Result<Result.Ok<string>, "FOO", { hello: string }>>(
-  Result.ok("helloworld")
-);
+describe("base", () => {
+  test("type", () => {
+    const $ = Result("abc") as Result<string, "MyError">;
+    expect($).toMatchObject({ value: "abc" });
 
-// @ts-expect-error Ok<Number> does not match ok(string).
-expectType<Result<Ok<number>, "FOO", { hello: string }>>(ok("helloworld"));
+    if ($.error) {
+      expectType<Result<never, "MyError">>($);
+      return;
+    }
+    {
+      const [value] = $;
+      expectType<string>(value);
+    }
+    {
+      const value = $.value;
+      expectType<string>(value);
+    }
+  });
+});
 
-expectType<
-  Result<
-    string,
-    Err<"FOO", { hello: string }> | Err<"BAR" | "BAZ", { world: number }>
-  >
->(err("FOO").$info({ hello: "world" }));
+describe("value", () => {
+  test("basic result", () => {
+    const $ = Result(123);
+    expect($).toMatchObject({ value: 123 });
+    expectType<Result<number>>($);
+    expectNotType<Result<string>>($);
 
-expectType<
-  Result<
-    string,
-    Err<"FOO", { hello: string }> | Err<"BAR" | "BAZ", { world: number }>
-  >
->(err("BAZ").$info({ world: 100 }));
+    expect($.value).toBe(123);
+    expectType<number>($.value);
+    expectNotType<number | undefined>($.value);
 
-expectType<
-  Result<
-    string,
-    Err<"FOO", { hello: string }> | Err<"BAR" | "BAZ", { world: number }>
-  >
-  // @ts-expect-error "100" does not match of type number.
->(err("BAZ").$info({ world: "100" }));
+    const [value] = $;
+    expect(value).toBe(123);
+    expectType<number>(value);
+    expectNotType<number | undefined>(value);
+    expectNotType<string>(value);
 
-expectType<Result.Async<string>>((async () => Result.ok("foobar"))());
+    expect($.or(456)).toBe(123);
+    expect($.orUndefined()).toBe(123);
 
-test(".ok .err .fromThrowable", () => {
-  expect(Result.ok("foobar").ok).toBe(true);
-  expect(Result.err("FOOBAR_ERROR").ok).toBe(false);
+    // @ts-expect-error or(arg), arg must be same type as result value (number).
+    expect($.or("abc")).toBe(123);
+  });
+
+  test("async result", async () => {
+    const $$ = (async () => Result("abc"))();
+    expectType<Result.Async<string>>($$);
+    expectNotType<Result.Async<number>>($$);
+
+    const $ = await $$;
+    expect($).toMatchObject({ value: "abc" });
+    expectType<Result<string>>($);
+    expectNotType<Result<number>>($);
+
+    const [value] = $;
+    expect(value).toBe("abc");
+    expectType<string>(value);
+    expectNotType<string | undefined>(value);
+    expectNotType<number>(value);
+  });
+});
+
+describe("error", () => {
+  test("basic error", () => {
+    const $ = Result.error("MyError");
+    expect($).toMatchObject({ error: { type: "MyError" } });
+    expectType<Result<never, "MyError">>($);
+    expectNotType<Result<never, "OtherError">>($);
+
+    expectType<"MyError">($.error.type);
+    expectType<Record<string, never>>($.error.meta);
+    expectType<unknown>($.error.cause);
+
+    expect($.or("test" as never)).toBe("test");
+    expect($.orUndefined()).toBeUndefined();
+  });
+
+  test("async error", async () => {
+    const $$ = (async () => Result.error("MyError"))();
+    expectType<Result.Async<never, "MyError">>($$);
+    expectNotType<Result.Async<never, "OtherError">>($$);
+
+    const $ = await $$;
+    expect($).toMatchObject({ error: { type: "MyError" } });
+    expectType<Result<never, "MyError">>($);
+    expectNotType<Result<never, "OtherError">>($);
+  });
+
+  test("with meta", () => {
+    const $ = Result.error(["MyError", { a: "1" }]);
+    expect($).toMatchObject({ error: { type: "MyError", meta: { a: "1" } } });
+
+    type MyError = ["MyError", { a: string }];
+    type OtherError = ["OtherError", { b: number }];
+    type MyErrorWithNumber = ["MyError", { a: number }];
+
+    expectType<Result<never, MyError>>($);
+    expectType<Result<never, MyError | OtherError>>($);
+    expectNotType<Result<never, OtherError>>($);
+    expectNotType<Result<never, MyErrorWithNumber>>($);
+
+    expectType<{ a: string }>($.error.meta);
+  });
+
+  test("with cause", () => {
+    const $result = Result.error("OtherError");
+    const $ = Result.error("MyError", { cause: $result });
+    expect($).toMatchObject({
+      error: {
+        type: "MyError",
+        meta: {},
+        cause: $result,
+      },
+    });
+    expectType<Result<never, "MyError">>($);
+    expectNotType<Result<never, ["MyError", { a: string }]>>($);
+
+    expectType<Record<string, never>>($.error.meta);
+  });
+
+  test("with meta + cause", () => {
+    const $result = Result.error("OtherError");
+    const $ = Result.error(["MyError", { a: "foo" as const }], {
+      cause: $result,
+    });
+    expect($).toMatchObject({
+      error: {
+        type: "MyError",
+        meta: { a: "foo" },
+        cause: $result,
+      },
+    });
+    expectType<Result<never, ["MyError", { a: "foo" }]>>($);
+    expectNotType<Result<never, ["MyError", { a: string }]>>($);
+    expectNotType<Result<never, "MyError">>($);
+
+    expectType<{ a: string }>($.error.meta);
+  });
+});
+
+describe("fn", () => {
+  const fn = Result.fn(JSON.parse);
+
+  test("value", () => {
+    const $ = fn("{}");
+    expect($).toMatchObject({ value: {}, error: undefined });
+
+    if ($.error) return;
+    const [value] = $;
+    expectType<unknown>(value);
+  });
+
+  test("error", () => {
+    const $ = fn("invalid");
+    expect($.error?.type.thrown).toBeInstanceOf(SyntaxError);
+
+    if ($.error) return;
+    const [value] = $;
+    expectType<unknown>(value);
+  });
+
+  const asyncFn = Result.fn(async (s: string) => JSON.parse(s));
+
+  test("async value", async () => {
+    const $$ = asyncFn("{}");
+    expectType<Result.Async<unknown, Thrown>>($$);
+
+    const $ = await $$;
+    expect($).toMatchObject({ value: {}, error: undefined });
+
+    if ($.error) return;
+    const [value] = $;
+    expectType<unknown>(value);
+  });
+
+  test("async error", async () => {
+    const $$ = asyncFn("invalid");
+    expectType<Result.Async<unknown, Thrown>>($$);
+
+    const $ = await $$;
+    expect($.error?.type.thrown).toBeInstanceOf(SyntaxError);
+
+    if ($.error) return;
+    const [value] = $;
+    expectType<unknown>(value);
+  });
+});
+
+describe("try", () => {
+  test("sync", () => {
+    const $ = Result.try(() => "value");
+    expect($).toMatchObject({ value: "value", error: undefined });
+    expectType<Result<string, Thrown>>($);
+  });
+
+  test("async", async () => {
+    const $$ = Result.try(async () => "value");
+    expectType<Result.Async<string, Thrown>>($$);
+
+    const $ = await $$;
+    expect($).toMatchObject({ value: "value", error: undefined });
+    expectType<Result<string, Thrown>>($);
+  });
+});
+
+describe("returned", () => {
+  test("with no errors", () => {
+    function fn(): Result<string> {
+      return Result("string");
+    }
+
+    const $ = fn();
+    expectType<Result<string>>($);
+
+    // * If no possible errors, then allow direct access!
+    const [value] = $;
+    expectType<string>(value);
+  });
+
+  test("with many errors", () => {
+    function fn(
+      input: string
+    ): Result<
+      string,
+      "A" | "B" | ["AM", { am: string }] | ["BM", { bm: number }] | ["C"]
+    > {
+      if (input === "A") {
+        return Result.error("A");
+      }
+
+      if (input === "B") {
+        return Result.error("B");
+      }
+
+      if (input === "AM") {
+        return Result.error(["AM", { am: "abc" }]);
+      }
+
+      if (input === "BM") {
+        return Result.error(["BM", { bm: 123 }]);
+      }
+
+      return Result(input);
+    }
+
+    const $ = fn("1");
+    if ($.error) {
+      const value = $.or("2");
+      expectType<string>(value);
+      const valueOrUndefined = $.orUndefined();
+      expectType<string | undefined>(valueOrUndefined);
+
+      expectType<"A" | "B" | "AM" | "BM" | "C">($.error.type);
+      if ($.error.type === "AM") {
+        expectType<{ am: string }>($.error.meta);
+      } else if ($.error.type === "BM") {
+        expectType<{ bm: number }>($.error.meta);
+      } else {
+        expectType<Record<string, never>>($.error.meta);
+      }
+
+      return;
+    }
+
+    {
+      const value = $.value;
+      expectType<string>(value);
+      expect($.value).toBe("1");
+    }
+
+    {
+      const [value] = $;
+      expectType<string>(value);
+      expect($.value).toBe("1");
+    }
+  });
 });
