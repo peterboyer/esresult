@@ -20,7 +20,6 @@ interface ResultError<T, E> {
     | never;
   or(value: T): never;
   orUndefined(): never | undefined;
-  // because(cause: unknown): ResultError<T, E>;
 }
 
 interface ResultErrorObject<TYPE, META> {
@@ -93,14 +92,6 @@ function ResultError<
 }
 
 ResultError.prototype = Object.create(Result.prototype);
-
-// ? Feels wrong because this is a kind of _constructor_ function.
-// ResultError.prototype.because = function because<
-//   T extends ResultError<unknown, unknown>
-// >(this: T, cause: unknown): T {
-//   this.error.cause = cause;
-//   return this;
-// };
 
 Result.error = ResultError;
 
