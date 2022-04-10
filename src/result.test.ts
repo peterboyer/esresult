@@ -76,7 +76,7 @@ describe("error", () => {
     expectNotType<Result<never, "OtherError">>($);
 
     expectType<"MyError">($.error.type);
-    expectType<Record<string, never>>($.error.meta);
+    expectType<undefined>($.error.meta);
     expectType<unknown>($.error.cause);
 
     expect($.or("test" as never)).toBe("test");
@@ -123,7 +123,7 @@ describe("error", () => {
     expectType<Result<never, "MyError">>($);
     expectNotType<Result<never, ["MyError", { a: string }]>>($);
 
-    expectType<Record<string, never>>($.error.meta);
+    expectType<undefined>($.error.meta);
   });
 
   test("with meta + cause", () => {
@@ -264,7 +264,7 @@ describe("returned", () => {
       } else if ($.error.type === "BM") {
         expectType<{ bm: number }>($.error.meta);
       } else {
-        expectType<Record<string, never>>($.error.meta);
+        expectType<undefined>($.error.meta);
       }
 
       return;

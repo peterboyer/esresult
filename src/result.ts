@@ -16,10 +16,8 @@ interface ResultError<T, E> {
   error:
     | {
         type: E extends [type: unknown, meta?: unknown] ? E["0"] : E;
-        meta: E extends [type: unknown, meta: unknown]
-          ? E["1"]
-          : Record<string, never>;
-        cause?: unknown;
+        meta: E extends [type: unknown, meta: unknown] ? E["1"] : undefined;
+        cause: unknown;
       }
     | never;
   or(value: T): never;
