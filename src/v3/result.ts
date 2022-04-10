@@ -45,6 +45,12 @@ export function Result<VALUE>(value: VALUE): Result<VALUE, never> {
   return Object.assign(result, { value }, [value]);
 }
 
+// allows array/iterator-based destructuring
+Result.prototype = Object.create(Array.prototype);
+
+// inform the array iterator that it has 1 item, not undefined
+Result.prototype.length = 1;
+
 Result.prototype.or = function or(this: Result, value: unknown) {
   if (this.error) return value;
   return this.value;
