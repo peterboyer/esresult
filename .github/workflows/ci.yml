@@ -13,83 +13,55 @@ on:
         required: false
 
 jobs:
-  test-unit:
-    name: Unit Tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
-        with:
-          node-version: "16"
-          cache: "yarn"
-      - run: yarn install --frozen-lockfile
-
-      - run: yarn lint
-
-      - run: yarn test:ts
-
-      - run: yarn test:unit
-
   build:
     name: Build
     runs-on: ubuntu-latest
+    env:
+      # ? If "sha" will publish on the "sha" tag.
+      # BUILD_CHANNEL: ""
+      BUILD_CHANNEL: "sha"
+    outputs:
+      BUILD_CHANNEL: ${{ env.BUILD_CHANNEL }}
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
-        with:
-          node-version: "16"
-          cache: "yarn"
+      - uses: bahmutov/npm-install@v1
       - run: yarn install --frozen-lockfile
 
-      - run: yarn build
+      - run: |
+          yarn concurrently \
+            --names "lint,test,test:ts,build,docs" \
+            "yarn lint" \
+            "yarn test" \
+            "yarn test:ts" \
+            "yarn build" \
+            "yarn docs"
+
       - uses: actions/upload-artifact@v2
         with:
           name: dist
           path: dist
 
-  test-acceptance:
-    name: Acceptance Tests
-    needs: [test-unit, build]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/upload-artifact@v2
         with:
-          node-version: "16"
-          cache: "yarn"
-      - run: yarn install --frozen-lockfile
-
-      - uses: actions/download-artifact@v2
-        with:
-          name: dist
-          path: dist
-
-      - run: yarn test:acceptance
+          name: docs
+          path: docs
 
   deploy:
     name: Deploy
-    needs: test-acceptance
+    needs: build
+    runs-on: ubuntu-latest
     if: ${{ github.event.inputs.deploy == 'y' }}
     concurrency:
-      group: publish
+      group: deploy
       cancel-in-progress: true
     env:
       # workaround https://github.com/JS-DevTools/npm-publish/issues/15
       INPUT_TOKEN: ""
-      # ? UNCOMMENT BELOW: If "y" will publish on the "sha" tag.
-      # PUBLISH_SHA: "y"
-
-    runs-on: ubuntu-latest
+      PUBLISH_CHANNEL: ${{ needs.build.outputs.BUILD_CHANNEL == '' && 'latest' || needs.build.outputs.BUILD_CHANNEL }}
     steps:
       - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-
-      - uses: actions/setup-node@v2
-        with:
-          node-version: "16"
-          cache: "yarn"
-
+        with: { fetch-depth: 0 }
+      - uses: bahmutov/npm-install@v1
       - run: yarn install --frozen-lockfile
 
       - uses: actions/download-artifact@v2
@@ -97,39 +69,29 @@ jobs:
           name: dist
           path: dist
 
-      - if: ${{ env.PUBLISH_SHA != 'y' }}
+      - if: ${{ env.BUILD_CHANNEL == '' }}
         run: oTAG= yarn build:version
 
-      - if: ${{ env.PUBLISH_SHA == 'y' }}
+      - if: ${{ env.BUILD_CHANNEL == 'sha' }}
         run: oTAG= oSHA= yarn build:version
+
+      - run: echo ${{ env.PUBLISH_CHANNEL }}
 
       - uses: JS-DevTools/npm-publish@v1
         with:
           token: ${{ secrets.NPM_TOKEN }}
           package: ./dist/package.json
           access: public
-          tag: ${{ env.PUBLISH_SHA == 'y' && 'sha' || 'latest' }}
+          tag: ${{ env.PUBLISH_CHANNEL }}
 
       - uses: ad-m/github-push-action@master
         with:
           tags: true
 
-  docs:
-    name: Documentation
-    needs: deploy
-    concurrency:
-      group: docs
-      cancel-in-progress: true
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/download-artifact@v2
         with:
-          node-version: "16"
-          cache: "yarn"
-      - run: yarn install --frozen-lockfile
-
-      - run: yarn docs
+          name: docs
+          path: docs
 
       - uses: peaceiris/actions-gh-pages@v3
         with:
