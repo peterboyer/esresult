@@ -7,6 +7,6 @@
       }
     ]
   },
-  "testPathIgnorePatterns": ["uat"],
+  "testPathIgnorePatterns": ["__tests__"],
   "modulePathIgnorePatterns": ["dist"]
 }

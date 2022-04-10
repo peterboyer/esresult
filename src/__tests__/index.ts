@@ -36,7 +36,7 @@ describe("example", () => {
   test("error", async () => {
     const $ = await getUser("2");
     expect($.error).toMatchObject({
-      type: "IdNotFound",
+      type: "NotFound",
       meta: undefined,
       cause: undefined,
     });
@@ -100,7 +100,7 @@ describe("json", () => {
 
   test("stringify", () => {
     const $ = JSON.stringify({ foo: "bar" });
-    expect($.error?.type.thrown).toBeInstanceOf(Error);
+    expect($.orUndefined()).toBe('{"foo":"bar"}');
 
     if ($.error) {
       Result.error("ParseFailed", { cause: $ });

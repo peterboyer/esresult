@@ -3,8 +3,7 @@
   "compilerOptions": {
     "baseUrl": "./src",
     "paths": {
-      "esresult": ["./index.ts"],
-      "esresult/json": ["./json/index.ts"]
+      "esresult": ["./index.ts"]
     },
     "noImplicitAny": true,
     "noImplicitThis": true,

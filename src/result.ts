@@ -77,7 +77,7 @@ function ResultError<
     });
   }
   return Object.assign(result, {
-    error: { type: error, meta: {}, cause: options?.cause },
+    error: { type: error, meta: undefined, cause: options?.cause },
   });
 }
 

@@ -71,7 +71,9 @@ describe("value", () => {
 describe("error", () => {
   test("basic error", () => {
     const $ = Result.error("MyError");
-    expect($).toMatchObject({ error: { type: "MyError" } });
+    expect($).toMatchObject({
+      error: { type: "MyError", meta: undefined, cause: undefined },
+    });
     expectType<Result<never, "MyError">>($);
     expectNotType<Result<never, "OtherError">>($);
 

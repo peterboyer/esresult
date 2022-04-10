@@ -18,4 +18,4 @@ mv package.json package.json.ignore
 mv dist/package.json dist/package.json.ignore
 
 # filter to only acceptance, remove ignore pattern set in config
-jest --testRegex=uat --testPathIgnorePatterns=
+jest --testRegex=__tests__ --testPathIgnorePatterns=
