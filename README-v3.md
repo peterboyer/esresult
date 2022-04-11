@@ -2,27 +2,97 @@
   <img src="https://user-images.githubusercontent.com/8391902/147464722-786db152-e32d-429a-955a-d1e12960b8fc.png" alt="esresult" />
 </p>
 
-`esresult` is a zero-dependency, TypeScript-first utility for better
-error-handling patterns in your code by making domain-specific errors an
-**explicit** part of a function's public API.
+<div align="center">
+  <a href="https://www.npmjs.com/package/esresult">NPM</a>
+  <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
+  <a href="https://github.com/peterboyer/esresult/issues">Issues</a>
+</div>
+
+# Table of Contents
+
+- [What is esresult?](#what-is-esresult)
+- [Installation](#installation)
+- [Basic usage](#basic-usage)
+  - [Result of Function](#result-of-function)
+  - [Result of Async Function](#result-of-async-function)
+
+# What is esresult?
+
+`esresult` is a tiny, zero-dependency TypeScript-focused result/error utility.
+
+It helps you easily represent errors as part of your functions' signatures so
+that:
+- you don't need to maintain [`@throws` jsdoc
+  annotations](https://jsdoc.app/tags-throws.html),
+- you don't need to write [`Error` subclasses
+  boilerplate](https://javascript.info/custom-errors),
+- you don't need to return arbitary values like `-1`
+  ([Array.findIndex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/findIndex#return_value))
+  or `null`
+  ([String.match](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/match#return_value))
+  to indicate an error,
+- you don't need to compromise with `let` to assign a variable from [within a
+  try/catch closure](https://stackoverflow.com/a/43090730),
+
+<!-- And has a meticulously designed lightweight `Result` interface so that you can easily:
+
+- create a `Result` to return an "ok" value ([`Result(value)`](#result)),
+- create a `Result.error` to return an "error" value
+  ([`Result.error("MyError")`](#result-error)),
+- optionally include fully-typed error metadata with errors
+  ([`Result.error(["MyError", { foo: 1 }])`](#result-error-meta)),
+- fallback to a default value in case of an error ([`.or()`](#or)),
+- fallback to a `undefined` to represent an error instead
+  ([`.orUndefined()`](#orundefined)),
+- throw if you really want to crash on an exception ([`.orThrow()`](#orthrow)), -->
+
+# Installation
+
+```bash
+$ npm install esresult
+```
+
+# Basic usage
+
+Creating a simple function that returns a string and doesn't expect any errors.
 
 ```ts
 import Result from "esresult";
+
+function fn(): Result<string> {
+  return Result("hello");
+}
+
+// Can access result from Result because signature has no error-cases.
+const [value] = fn();
 ```
 
-Annotate your function's return values with `Result` to annotate both your
-success value and any domain-specific error states that you would traditionally
-use ~~`throw`~~ for.
+Creating a function that may "throw" an error.
 
 ```ts
-function foo(value: string): Result<string, "EmptyValue"> {
-  if (!value) {
-    return Result.error("EmptyValue");
-  }
+import Result from "esresult";
 
-  return Result(value);
+function fn(s: string): Result<string, "Empty"> {
+  if (!s) return Result.error("Empty");
+  return Result(s);
 }
+
+// (1) Handle errors with default values.
+const valueOrDefault = fn(_).or("default");
+const valueOrUndefined = fn(_).orUndefined();
+
+// (2) Or handle errors with logic, check if has `error`.
+const $value = fn(_);
+if ($value.error) return;
+// Then access value from Result after error-case is handled.
+const [value] = $value;
 ```
+
+# Result
+
+## Result of Function
+
+## Result of Async Function
 
 Call your function to receive a `Result` object with which you can check for
 errors before using your value, helping you write safer code with complete
