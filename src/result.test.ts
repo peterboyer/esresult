@@ -48,6 +48,9 @@ describe("value", () => {
 
     // @ts-expect-error or(arg), arg must be same type as result value (number).
     expect($.or("abc")).toBe(123);
+
+    const throws = jest.fn(() => $.orThrow());
+    expect(throws).not.toThrow();
   });
 
   test("async result", async () => {
@@ -83,6 +86,9 @@ describe("error", () => {
 
     expect($.or("test" as never)).toBe("test");
     expect($.orUndefined()).toBeUndefined();
+
+    const throws = jest.fn(() => $.orThrow());
+    expect(throws).toThrow();
   });
 
   test("async error", async () => {

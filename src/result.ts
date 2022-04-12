@@ -10,6 +10,7 @@ interface ResultValue<T> extends BareTuple<[value: T]> {
   error: undefined;
   or(value: T): T;
   orUndefined(): T | undefined;
+  orThrow(): void;
 }
 
 interface ResultError<T, E> {
@@ -22,6 +23,7 @@ interface ResultError<T, E> {
     | never;
   or(value: T): never;
   orUndefined(): never | undefined;
+  orThrow(): void;
 }
 
 export type Result<T = void, E = never> =
@@ -30,7 +32,9 @@ export type Result<T = void, E = never> =
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Result {
+  export type Any = Result<unknown, string>;
   export type Async<T = void, E = never> = Promise<Result<T, E>>;
+  export type AsyncAny = Async<unknown, string>;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -46,13 +50,24 @@ Result.prototype = Object.create(Array.prototype);
 // inform the array iterator that it has 1 item, not undefined
 Result.prototype.length = 1;
 
-Result.prototype.or = function or(this: Result, value: unknown) {
-  if (this.error) return value;
+Result.prototype.or = function or(this: Result.Any, defaultValue: unknown) {
+  if (this.error) {
+    return defaultValue;
+  }
   return this.value;
 };
 
-Result.prototype.orUndefined = function orUndefined(this: Result) {
-  if (this.error) return undefined;
+Result.prototype.orUndefined = function orUndefined(this: Result.Any) {
+  if (this.error) {
+    return undefined;
+  }
+  return this.value;
+};
+
+Result.prototype.orThrow = function orThrow(this: Result.Any) {
+  if (this.error) {
+    throw new Error(`${this.error.type}`);
+  }
   return this.value;
 };
 
