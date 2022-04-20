@@ -13,8 +13,13 @@ describe("base", () => {
 
     if ($.error) {
       expectType<Result<never, "MyError">>($);
+      expectType<Result.Error<"MyError">>($);
       return;
     }
+
+    expectType<Result<string, never>>($);
+    expectType<Result.Value<string>>($);
+
     {
       const [value] = $;
       expectType<string>(value);

@@ -5,36 +5,36 @@ type BareTuple<T> = Omit<
 
 ////////////////////////////////////////////////////////////////////////////////
 
-interface ResultValue<T> extends BareTuple<[value: T]> {
-  value: T | never;
-  error: undefined;
-  or(value: T): T;
-  orUndefined(): T | undefined;
-  orThrow(): void;
-}
-
-interface ResultError<T, E> {
-  error:
-    | {
-        type: E extends [type: unknown, meta?: unknown] ? E["0"] : E;
-        meta: E extends [type: unknown, meta: unknown] ? E["1"] : undefined;
-        cause: unknown;
-      }
-    | never;
-  or(value: T): never;
-  orUndefined(): never | undefined;
-  orThrow(): void;
-}
-
-export type Result<T = void, E = never> =
-  | (T extends never ? never : ResultValue<T>)
-  | (E extends never ? never : ResultError<T, E>);
+export type Result<V = void, E = never> =
+  | (V extends never ? never : Result.Value<V>)
+  | (E extends never ? never : Result.Error<E, V>);
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Result {
   export type Any = Result<unknown, string>;
-  export type Async<T = void, E = never> = Promise<Result<T, E>>;
+  export type Async<V = void, E = never> = Promise<Result<V, E>>;
   export type AsyncAny = Async<unknown, string>;
+
+  export interface Value<V> extends BareTuple<[value: V]> {
+    value: V | never;
+    error: undefined;
+    or(value: V): V;
+    orUndefined(): V | undefined;
+    orThrow(): void;
+  }
+
+  export interface Error<E, V = never> {
+    error:
+      | {
+          type: E extends [type: unknown, meta?: unknown] ? E["0"] : E;
+          meta: E extends [type: unknown, meta: unknown] ? E["1"] : undefined;
+          cause: unknown;
+        }
+      | never;
+    or(value: V): never;
+    orUndefined(): never | undefined;
+    orThrow(): void;
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
