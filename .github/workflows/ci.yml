@@ -3,7 +3,7 @@ name: main
 on:
   push:
     branches:
-      - main
+      - v*
     paths-ignore:
       - CHANGELOG.md
   workflow_dispatch:
