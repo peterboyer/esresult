@@ -2,192 +2,608 @@
   <img src="https://user-images.githubusercontent.com/8391902/147464722-786db152-e32d-429a-955a-d1e12960b8fc.png" alt="esresult" />
 </p>
 
-<p><code>esresult</code> is a zero-dependency, TypeScript-first utility for better
-error-handling patterns in your code by making domain-specific errors an
-<strong>explicit</strong> part of a function&#39;s public API.</p>
-<p>By <strong>forcing</strong> function callers to deal with possible domain-specific errors you
-can build more transparent and resilient functionality, and circumvent a
-codebase littered with try/catch blocks or other emergent anti-patterns like
-brittle catch-all blocks that handle too much.</p>
-<p>Returning errors (instead of <code>throw</code>ing them) allows the caller to be aware of
-all possible domain-specific error values of a function, and allows for static
-type-checking to help enforce correctness of error-handling logic.</p>
-<p><code>esresult</code> supports:</p>
-<ul>
-<li><strong>intellisense</strong> of a <code>Result</code>&#39;s possible error types.</li>
-<li><strong>cause-chaining</strong> to build domain-specific error causal-chains.</li>
-<li><strong>built-in data structure for error messages and info</strong> for canonical error
-descriptions and/or contextual error information (e.g. data of a failing
-iteration in a loop).</li>
-<li><strong>ok result with warnings</strong> for idiomatic handling of partial success cases
-where a valid value can be returned despite some non-critical errors.</li>
-</ul>
+<div align="center">
+  <a href="https://www.npmjs.com/package/esresult">NPM</a>
+  <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
+  <a href="https://github.com/peterboyer/esresult/issues">Issues</a>
+</div>
+<br/>
 
-<a href="#api" id="api" style="color: inherit; text-decoration: none;">
-  <h2>API</h2>
+
+<a href="#table-of-contents" id="table-of-contents" style="color: inherit; text-decoration: none;">
+  <h1>Table of Contents</h1>
 </a>
 <ul>
-<li><a href="https://ptboyer.github.io/esresult/">View Reference Docs + Examples</a></li>
-<li><a href="./EXAMPLE.md">Example With and Without <code>esresult</code></a></li>
+<li><a href="#what-is-esresult">What is esresult?</a></li>
+<li><a href="#why-does-esresult-exist">Why does esresult exist?</a><ul>
+<li><a href="#using-esresult-instead">Using esresult instead!</a></li>
 </ul>
+</li>
+<li><a href="#how-does-esresult-work">How does esresult work?</a></li>
+<li><a href="#comparisons">Comparison to existing libraries</a></li>
+<li><a href="#installation">Installation</a></li>
+<li><a href="#usage">Usage</a><ul>
+<li><a href="#with-no-errors">With no errors</a></li>
+<li><a href="#with-one-error">With one error</a></li>
+<li><a href="#with-many-errors">With many errors</a></li>
+<li><a href="#with-detailed-errors">With detailed errors</a></li>
+<li><a href="#async-functions">Async functions</a></li>
+<li><a href="#chaining-errors">Chaining errors</a></li>
+<li><a href="#wrap-throwable-functions-fn">Wrap throwable functions (<code>.fn</code>)</a></li>
+<li><a href="#execute-throwable-functions-try">Execute throwable functions (<code>.try</code>)</a></li>
+</ul>
+</li>
+<li><a href="#helpers">Helpers</a><ul>
+<li><a href="#json">JSON</a></li>
+</ul>
+</li>
+<li><a href="#license">License</a></li>
+</ul>
+<br/>
 
-<a href="#install" id="install" style="color: inherit; text-decoration: none;">
-  <h2>Install</h2>
-</a>
-<pre><code class="language-shell"><span class="hl-1">yarn add esresult</span>
-</code></pre>
 
-<a href="#overview" id="overview" style="color: inherit; text-decoration: none;">
-  <h2>Overview</h2>
+<a href="#what-is-esresult" id="what-is-esresult" style="color: inherit; text-decoration: none;">
+  <h1>What is <code>esresult</code>?</h1>
 </a>
-<p>Annotate your functions with a <code>Result</code> generic to explicitly define a
-successful <code>Ok</code> type (returned with <code>ok(value)</code>) and optionally define all
-possible domain-specific <code>Err</code> types that the function may return (returned with
-<code>err(type)</code>).</p>
-<pre><code class="language-ts"><span class="hl-8">import</span><span class="hl-1"> { </span><span class="hl-0">Result</span><span class="hl-1">, </span><span class="hl-0">Ok</span><span class="hl-1">, </span><span class="hl-0">ok</span><span class="hl-1">, </span><span class="hl-0">Err</span><span class="hl-1">, </span><span class="hl-0">err</span><span class="hl-1">, </span><span class="hl-0">fromThrowable</span><span class="hl-1"> } </span><span class="hl-8">from</span><span class="hl-1"> </span><span class="hl-3">&quot;esresult&quot;</span><span class="hl-1">;</span>
-</code></pre>
-
-<a href="#define-only-ok-type" id="define-only-ok-type" style="color: inherit; text-decoration: none;">
-  <h3>Define only <code>Ok</code> type.</h3>
-</a>
-<pre><code class="language-ts"><span class="hl-2">function</span><span class="hl-1"> </span><span class="hl-6">foo</span><span class="hl-1">(...): </span><span class="hl-9">Result</span><span class="hl-1">&lt;</span><span class="hl-9">number</span><span class="hl-1">&gt;</span><br/><span class="hl-2">function</span><span class="hl-1"> </span><span class="hl-6">foo</span><span class="hl-1">(...): </span><span class="hl-9">Result</span><span class="hl-1">&lt;</span><span class="hl-9">Ok</span><span class="hl-1">&lt;</span><span class="hl-9">number</span><span class="hl-1">&gt;&gt;</span><br/><span class="hl-2">function</span><span class="hl-1"> </span><span class="hl-6">foo</span><span class="hl-1">(...): </span><span class="hl-9">Result</span><span class="hl-1">&lt;</span><span class="hl-9">Result</span><span class="hl-1">.</span><span class="hl-9">Ok</span><span class="hl-1">&lt;</span><span class="hl-9">number</span><span class="hl-1">&gt;&gt;</span>
-</code></pre>
-<blockquote>
-<p>You may use <code>number</code> instead of <code>Ok&lt;number&gt;</code> as optional shorthand. You may
-also access Ok from Result via. Result.Ok.</p>
-</blockquote>
-
-<a href="#or-define-both-ok-and-all-possible-err-types-as-a-union" id="or-define-both-ok-and-all-possible-err-types-as-a-union" style="color: inherit; text-decoration: none;">
-  <h3>Or define both <code>Ok</code> and all possible <code>Err</code> types as a union.</h3>
-</a>
-<pre><code class="language-ts"><span class="hl-2">function</span><span class="hl-1"> </span><span class="hl-6">foo</span><span class="hl-1">(...): </span><span class="hl-9">Result</span><span class="hl-1">&lt;</span><span class="hl-9">number</span><span class="hl-1">, </span><span class="hl-3">&quot;INVALID&quot;</span><span class="hl-1"> | </span><span class="hl-3">&quot;TOO_BIG&quot;</span><span class="hl-1">&gt;</span><br/><span class="hl-2">function</span><span class="hl-1"> </span><span class="hl-6">foo</span><span class="hl-1">(...): </span><span class="hl-9">Result</span><span class="hl-1">&lt;</span><span class="hl-9">number</span><span class="hl-1">, </span><span class="hl-9">Err</span><span class="hl-1">&lt;</span><span class="hl-3">&quot;INVALID&quot;</span><span class="hl-1"> | </span><span class="hl-3">&quot;TOO_BIG&quot;</span><span class="hl-1">&gt;&gt;</span><br/><span class="hl-2">function</span><span class="hl-1"> </span><span class="hl-6">foo</span><span class="hl-1">(...): </span><span class="hl-9">Result</span><span class="hl-1">&lt;</span><span class="hl-9">number</span><span class="hl-1">, </span><span class="hl-9">Result</span><span class="hl-1">.</span><span class="hl-9">Err</span><span class="hl-1">&lt;</span><span class="hl-3">&quot;INVALID&quot;</span><span class="hl-1"> | </span><span class="hl-3">&quot;TOO_BIG&quot;</span><span class="hl-1">&gt;&gt;</span><br/><span class="hl-2">function</span><span class="hl-1"> </span><span class="hl-6">foo</span><span class="hl-1">(...): </span><span class="hl-9">Result</span><span class="hl-1">&lt;</span><span class="hl-9">number</span><span class="hl-1">, </span><span class="hl-9">Err</span><span class="hl-1">&lt;</span><span class="hl-3">&quot;INVALID&quot;</span><span class="hl-1">&gt; | </span><span class="hl-9">Err</span><span class="hl-1">&lt;</span><span class="hl-3">&quot;TOO_BIG&quot;</span><span class="hl-1">&gt;&gt;</span><br/><span class="hl-2">function</span><span class="hl-1"> </span><span class="hl-6">foo</span><span class="hl-1">(...): </span><span class="hl-9">Result</span><span class="hl-1">&lt;</span><span class="hl-9">number</span><span class="hl-1">, </span><span class="hl-9">Result</span><span class="hl-1">.</span><span class="hl-9">Err</span><span class="hl-1">&lt;</span><span class="hl-3">&quot;INVALID&quot;</span><span class="hl-1">&gt; | </span><span class="hl-9">Result</span><span class="hl-1">.</span><span class="hl-9">Err</span><span class="hl-1">&lt;</span><span class="hl-3">&quot;TOO_BIG&quot;</span><span class="hl-1">&gt;&gt;</span>
-</code></pre>
-<blockquote>
-<p>Similar to Ok shorthand, you may pass a <code>type</code> instead of <code>Err&lt;type&gt;</code>. You
-may also access Err from Result via. Result.Err.</p>
-</blockquote>
-
-<a href="#or-also-define-a-common-info-object-for-errors" id="or-also-define-a-common-info-object-for-errors" style="color: inherit; text-decoration: none;">
-  <h3>Or also define a common <code>info</code> object for errors.</h3>
-</a>
-<pre><code class="language-ts"><span class="hl-2">function</span><span class="hl-1"> </span><span class="hl-6">foo</span><span class="hl-1">(...): </span><span class="hl-9">Result</span><span class="hl-1">&lt;</span><span class="hl-9">number</span><span class="hl-1">, </span><span class="hl-3">&quot;INVALID&quot;</span><span class="hl-1">, { </span><span class="hl-0">foo</span><span class="hl-1">: </span><span class="hl-9">string</span><span class="hl-1"> }&gt;</span><br/><span class="hl-2">function</span><span class="hl-1"> </span><span class="hl-6">foo</span><span class="hl-1">(...): </span><span class="hl-9">Result</span><span class="hl-1">&lt;</span><span class="hl-9">number</span><span class="hl-1">, </span><span class="hl-9">Err</span><span class="hl-1">&lt;</span><span class="hl-3">&quot;INVALID&quot;</span><span class="hl-1">, { </span><span class="hl-0">foo</span><span class="hl-1">: </span><span class="hl-9">string</span><span class="hl-1"> }&gt;&gt;</span><br/><span class="hl-2">function</span><span class="hl-1"> </span><span class="hl-6">foo</span><span class="hl-1">(...): </span><span class="hl-9">Result</span><span class="hl-1">&lt;</span><span class="hl-9">number</span><span class="hl-1">, </span><span class="hl-9">Result</span><span class="hl-1">.</span><span class="hl-9">Err</span><span class="hl-1">&lt;</span><span class="hl-3">&quot;INVALID&quot;</span><span class="hl-1">, { </span><span class="hl-0">foo</span><span class="hl-1">: </span><span class="hl-9">string</span><span class="hl-1"> }&gt;&gt;</span>
-</code></pre>
-<blockquote>
-<p><code>Err</code> can be directly provided with the <code>info</code> shape instead of using <code>Result</code>
-for shorthand.</p>
-</blockquote>
-
-<a href="#or-define-both-ok-and-different-info-objects-per-err-types" id="or-define-both-ok-and-different-info-objects-per-err-types" style="color: inherit; text-decoration: none;">
-  <h3>Or define both <code>Ok</code>, and different <code>info</code> objects per <code>Err</code> types.</h3>
-</a>
-<pre><code class="language-ts"><span class="hl-2">function</span><span class="hl-1"> </span><span class="hl-6">foo</span><span class="hl-1">(...): </span><span class="hl-9">Result</span><span class="hl-1">&lt;</span><br/><span class="hl-1">  </span><span class="hl-9">number</span><span class="hl-1">,</span><br/><span class="hl-1">  | </span><span class="hl-9">Err</span><span class="hl-1">&lt;</span><span class="hl-3">&quot;INVALID&quot;</span><span class="hl-1">, { </span><span class="hl-0">a</span><span class="hl-1">?: </span><span class="hl-9">string</span><span class="hl-1"> }&gt;</span><br/><span class="hl-1">  | </span><span class="hl-9">Err</span><span class="hl-1">&lt;</span><span class="hl-3">&quot;TOO_BIG&quot;</span><span class="hl-1"> | </span><span class="hl-3">&quot;TOO_SMALL&quot;</span><span class="hl-1">, { </span><span class="hl-0">min</span><span class="hl-1">?: </span><span class="hl-9">number</span><span class="hl-1">, </span><span class="hl-0">max</span><span class="hl-1">?: </span><span class="hl-9">number</span><span class="hl-1"> }&gt;</span><br/><span class="hl-1">  | </span><span class="hl-9">Err</span><span class="hl-1">&lt;</span><span class="hl-3">&quot;UNKNOWN&quot;</span><span class="hl-1">, { </span><span class="hl-0">a</span><span class="hl-1">: </span><span class="hl-9">string</span><span class="hl-1">, </span><span class="hl-0">b</span><span class="hl-1">: </span><span class="hl-9">string</span><span class="hl-1"> }&gt;</span><br/><span class="hl-1">&gt;</span>
-</code></pre>
-
-<a href="#use-ok-and-err-to-return-values-and-errors" id="use-ok-and-err-to-return-values-and-errors" style="color: inherit; text-decoration: none;">
-  <h3>Use <code>ok(...)</code> and <code>err(...)</code> to return values and errors.</h3>
-</a>
-<pre><code class="language-ts"><span class="hl-2">function</span><span class="hl-1"> </span><span class="hl-6">foo</span><span class="hl-1">(</span><span class="hl-0">source</span><span class="hl-1">: </span><span class="hl-9">string</span><span class="hl-1">): </span><span class="hl-9">Result</span><span class="hl-1">&lt;</span><span class="hl-9">number</span><span class="hl-1">, </span><span class="hl-3">&quot;INVALID&quot;</span><span class="hl-1"> | </span><span class="hl-3">&quot;TOO_BIG&quot;</span><span class="hl-1">&gt; {</span><br/><span class="hl-1">  </span><span class="hl-2">const</span><span class="hl-1"> </span><span class="hl-5">result</span><span class="hl-1"> = </span><span class="hl-6">parseInt</span><span class="hl-1">(</span><span class="hl-0">source</span><span class="hl-1">, </span><span class="hl-7">10</span><span class="hl-1">);</span><br/><br/><span class="hl-1">  </span><span class="hl-8">if</span><span class="hl-1"> (</span><span class="hl-9">Number</span><span class="hl-1">.</span><span class="hl-6">isNan</span><span class="hl-1">(</span><span class="hl-0">result</span><span class="hl-1">))</span><br/><span class="hl-1">    </span><span class="hl-8">return</span><span class="hl-1"> </span><span class="hl-6">err</span><span class="hl-1">(</span><span class="hl-3">&quot;INVALID&quot;</span><span class="hl-1">);</span><br/><br/><span class="hl-1">  </span><span class="hl-8">if</span><span class="hl-1"> (</span><span class="hl-0">result</span><span class="hl-1"> &gt; </span><span class="hl-7">100</span><span class="hl-1">)</span><br/><span class="hl-1">    </span><span class="hl-8">return</span><span class="hl-1"> </span><span class="hl-6">err</span><span class="hl-1">(</span><span class="hl-3">&quot;TOO_BIG&quot;</span><span class="hl-1">).</span><span class="hl-6">$info</span><span class="hl-1">({ </span><span class="hl-0">max:</span><span class="hl-1"> </span><span class="hl-7">100</span><span class="hl-1"> });</span><br/><br/><span class="hl-1">  </span><span class="hl-8">return</span><span class="hl-1"> </span><span class="hl-6">ok</span><span class="hl-1">(</span><span class="hl-0">result</span><span class="hl-1">);</span><br/><span class="hl-1">}</span>
-</code></pre>
-
-<a href="#read-a-result39s-success-or-failure-state-using-ok" id="read-a-result39s-success-or-failure-state-using-ok" style="color: inherit; text-decoration: none;">
-  <h3>Read a <code>Result</code>&#39;s success or failure state, using <code>.ok</code>.</h3>
-</a>
-<pre><code class="language-ts"><span class="hl-2">const</span><span class="hl-1"> </span><span class="hl-5">$a</span><span class="hl-1"> = </span><span class="hl-6">foo</span><span class="hl-1">(</span><span class="hl-3">&quot;100&quot;</span><span class="hl-1">);</span><br/><br/><span class="hl-4">// if `ok` is false, Result is an error.</span><br/><span class="hl-8">if</span><span class="hl-1"> (!</span><span class="hl-0">$a</span><span class="hl-1">.</span><span class="hl-0">ok</span><span class="hl-1">) </span><span class="hl-8">return</span><span class="hl-1"> ...</span><br/><br/><span class="hl-4">// otherwise, Result is an ok value.</span><br/><span class="hl-2">const</span><span class="hl-1"> </span><span class="hl-5">a</span><span class="hl-1"> = </span><span class="hl-0">$a</span><span class="hl-1">.</span><span class="hl-0">value</span><span class="hl-1">;</span>
-</code></pre>
-
-<a href="#create-an-error-chain-using-cause" id="create-an-error-chain-using-cause" style="color: inherit; text-decoration: none;">
-  <h3>Create an Error chain, using <code>.$cause(...)</code>.</h3>
-</a>
-<p>Rather than wrapping many statements in their own try/catch closures (which are
-annoying when trying to use <code>const</code> for assignments), you can handle returned
-<code>Result</code> objects and their values directly. <code>Err</code> objects support <code>.$cause(Err)</code>
-to allow domain-space casual-chaining of errors that make debugging and
-reporting a breeze.</p>
-<pre><code class="language-ts"><span class="hl-2">const</span><span class="hl-1"> </span><span class="hl-5">$a</span><span class="hl-1"> = </span><span class="hl-6">foo</span><span class="hl-1">(</span><span class="hl-3">&quot;100&quot;</span><span class="hl-1">);</span><br/><span class="hl-8">if</span><span class="hl-1"> (!</span><span class="hl-0">$a</span><span class="hl-1">.</span><span class="hl-0">ok</span><span class="hl-1">) {</span><br/><span class="hl-1">  </span><span class="hl-4">// return a new error, and track its cause</span><br/><span class="hl-1">  </span><span class="hl-8">return</span><span class="hl-1"> </span><span class="hl-6">err</span><span class="hl-1">(</span><span class="hl-3">&quot;FOO_ERROR&quot;</span><span class="hl-1">).</span><span class="hl-6">$cause</span><span class="hl-1">(</span><span class="hl-0">$a</span><span class="hl-1">);</span><br/><span class="hl-1">}</span><br/><span class="hl-2">const</span><span class="hl-1"> </span><span class="hl-5">a</span><span class="hl-1"> = </span><span class="hl-0">$a</span><span class="hl-1">.</span><span class="hl-0">value</span><span class="hl-1">;</span>
-</code></pre>
-
-<a href="#or-continue-with-default-value-using-or-and-orundefined" id="or-continue-with-default-value-using-or-and-orundefined" style="color: inherit; text-decoration: none;">
-  <h3>Or continue with default value, using <code>.or(...)</code> and <code>.orUndefined()</code>.</h3>
-</a>
-<p>Many libraries opt to simplify their API by returning <code>undefined</code> (or <code>null</code>)
-when encountering an error rather than <code>throw</code>ing or otherwise reporting details
-of a failure. With a <code>Result</code> the API caller can choose to handle an error with
-<code>undefined</code> or with a value of the matching <code>Ok</code> type.</p>
-<pre><code class="language-ts"><span class="hl-2">const</span><span class="hl-1"> </span><span class="hl-5">a</span><span class="hl-1"> = </span><span class="hl-6">foo</span><span class="hl-1">(</span><span class="hl-3">&quot;100&quot;</span><span class="hl-1">).</span><span class="hl-6">orUndefined</span><span class="hl-1">(); </span><span class="hl-4">// default to undefined</span><br/><span class="hl-2">const</span><span class="hl-1"> </span><span class="hl-5">a</span><span class="hl-1"> = </span><span class="hl-6">foo</span><span class="hl-1">(</span><span class="hl-3">&quot;100&quot;</span><span class="hl-1">).</span><span class="hl-6">or</span><span class="hl-1">(</span><span class="hl-7">50</span><span class="hl-1">); </span><span class="hl-4">// default to different number</span><br/><span class="hl-2">const</span><span class="hl-1"> </span><span class="hl-5">a</span><span class="hl-1"> = </span><span class="hl-6">foo</span><span class="hl-1">(</span><span class="hl-3">&quot;100&quot;</span><span class="hl-1">).</span><span class="hl-6">or</span><span class="hl-1">(</span><span class="hl-3">&quot;50&quot;</span><span class="hl-1">); </span><span class="hl-4">// ts: error: &quot;50&quot; is not of type: number</span>
-</code></pre>
-
-<a href="#or-handle-a-specific-error-type-using-error" id="or-handle-a-specific-error-type-using-error" style="color: inherit; text-decoration: none;">
-  <h3>Or handle a specific error type, using <code>.error</code>.</h3>
-</a>
-<pre><code class="language-ts"><span class="hl-2">const</span><span class="hl-1"> </span><span class="hl-5">$a</span><span class="hl-1"> = </span><span class="hl-6">foo</span><span class="hl-1">(</span><span class="hl-3">&quot;100&quot;</span><span class="hl-1">);</span><br/><span class="hl-8">if</span><span class="hl-1"> (</span><span class="hl-0">$a</span><span class="hl-1">.</span><span class="hl-0">error</span><span class="hl-1"> === </span><span class="hl-3">&quot;FOOBAR&quot;</span><span class="hl-1">) {</span><br/><span class="hl-4">//               ^ ts: error: can only be: &quot;INVALID&quot; | &quot;TOO_BIG&quot;</span><br/><span class="hl-1">  </span><span class="hl-8">return</span><span class="hl-1"> </span><span class="hl-6">err</span><span class="hl-1">(</span><span class="hl-3">&quot;CRITICAL_ERROR&quot;</span><span class="hl-1">).</span><span class="hl-6">$cause</span><span class="hl-1">(</span><span class="hl-0">$a</span><span class="hl-1">);</span><br/><span class="hl-1">}</span><br/><span class="hl-2">const</span><span class="hl-1"> </span><span class="hl-5">a</span><span class="hl-1"> = </span><span class="hl-0">$a</span><span class="hl-1">.</span><span class="hl-6">orUndefined</span><span class="hl-1">(); </span><span class="hl-4">// gracefully continue</span>
-</code></pre>
-
-<a href="#enrich-your-errors-using-info-and-message" id="enrich-your-errors-using-info-and-message" style="color: inherit; text-decoration: none;">
-  <h3>Enrich your Errors, using <code>.$info(...)</code> and <code>.$message(...)</code>.</h3>
-</a>
-<p>All other Result/error-handling libraries only support a basic error primitive
-(e.g. string, Error-object, etc.) leaving the developer to implement their own
-interfaces to store possible contextual information (e.g. status codes, failing
-object, etc.). Because these use-cases are so common, <code>esresult</code>&#39;s <code>Err</code> object
-supports adding this information out-of-the-box.</p>
-<pre><code class="language-ts"><span class="hl-2">const</span><span class="hl-1"> </span><span class="hl-5">$</span><span class="hl-1"> = </span><span class="hl-6">err</span><span class="hl-1">(</span><span class="hl-3">&quot;QUERY_ERROR&quot;</span><span class="hl-1">)</span><br/><span class="hl-1">  .</span><span class="hl-6">$cause</span><span class="hl-1">(</span><span class="hl-0">$response</span><span class="hl-1">) </span><span class="hl-4">// details on the cause, e.g. network error?</span><br/><span class="hl-1">  .</span><span class="hl-6">$info</span><span class="hl-1">({ </span><span class="hl-0">url:</span><span class="hl-1"> </span><span class="hl-0">requestUrl</span><span class="hl-1">, </span><span class="hl-0">query</span><span class="hl-1">, </span><span class="hl-0">variables</span><span class="hl-1"> }) </span><span class="hl-4">// relevant context details</span><br/><span class="hl-1">  .</span><span class="hl-6">$message</span><span class="hl-1">(</span><span class="hl-3">&quot;Unable to communicate with the server.&quot;</span><span class="hl-1">) </span><span class="hl-4">// human readable</span><br/><br/><span class="hl-0">$</span><span class="hl-1">.</span><span class="hl-0">cause</span><br/><span class="hl-4">//      ^ type: Err&lt;unknown, unknown&gt; (causal chains are not generic)</span><br/><span class="hl-0">$</span><span class="hl-1">.</span><span class="hl-0">info</span><span class="hl-1">.</span><br/><span class="hl-4">//      ^ intellisense: &quot;url&quot; | &quot;query&quot; | &quot;variables&quot;</span><br/><span class="hl-0">$</span><span class="hl-1">.</span><span class="hl-0">message</span><br/><span class="hl-4">//        ^ type: string</span>
-</code></pre>
-
-<a href="#ok-with-partial-errors-using-ok" id="ok-with-partial-errors-using-ok" style="color: inherit; text-decoration: none;">
-  <h3>Ok with partial errors, using <code>.ok</code>.</h3>
-</a>
-<pre><code class="language-ts"><span class="hl-2">function</span><span class="hl-1"> </span><span class="hl-6">foo</span><span class="hl-1">(...): </span><span class="hl-9">Result</span><span class="hl-1">&lt;</span><span class="hl-9">Ok</span><span class="hl-1">&lt;</span><span class="hl-9">number</span><span class="hl-1">, </span><span class="hl-9">Err</span><span class="hl-1">&lt;&gt;&gt;&gt;</span>
-</code></pre>
-<p>Sometimes it is useful to provide a successful value AND output any errors or
-warnings that are non-critical (e.g. parsing many items, and returning
-successful items as an array, but reporting failed items as an array of errors).</p>
-<blockquote>
-<p>For convenience, if the given array of errors is empty, <code>.partialErrors</code> will
-evaluate as <code>undefined</code>. This allows for expressions like <code>!$.partialErrors</code> to
-check for any partial errors, instead of the needless verbose
-<code>!$.partialErrors?.length</code>.</p>
-</blockquote>
-<pre><code class="language-ts"><span class="hl-2">const</span><span class="hl-1"> </span><span class="hl-5">okItems</span><span class="hl-1">: </span><span class="hl-9">FooItem</span><span class="hl-1">[] = [];</span><br/><span class="hl-2">const</span><span class="hl-1"> </span><span class="hl-5">itemWarnings</span><span class="hl-1">: </span><span class="hl-9">Err</span><span class="hl-1">&lt;</span><span class="hl-3">&quot;INVALID&quot;</span><span class="hl-1"> | </span><span class="hl-3">&quot;OUT_OF_RANGE&quot;</span><span class="hl-1">&gt;[] = [];</span><br/><br/><span class="hl-2">const</span><span class="hl-1"> </span><span class="hl-5">$</span><span class="hl-1"> = </span><span class="hl-6">ok</span><span class="hl-1">(</span><span class="hl-0">okItems</span><span class="hl-1">).</span><span class="hl-6">$warnings</span><span class="hl-1">(</span><span class="hl-0">itemErrors</span><span class="hl-1">);</span><br/><span class="hl-2">const</span><span class="hl-1"> </span><span class="hl-5">$</span><span class="hl-1"> = </span><span class="hl-6">ok</span><span class="hl-1">(</span><span class="hl-0">okItems</span><span class="hl-1">, { </span><span class="hl-0">warnings:</span><span class="hl-1"> </span><span class="hl-0">itemErrors</span><span class="hl-1"> });</span><br/><br/><span class="hl-0">$</span><span class="hl-1">.</span><span class="hl-0">value</span><br/><span class="hl-4">//    ^ type: FooItem[]</span><br/><span class="hl-0">$</span><span class="hl-1">.</span><span class="hl-0">warnings</span><br/><span class="hl-4">//         ^ type: undefined | Err&lt;&quot;INVALID&quot; | &quot;OUT_OF_RANGE&quot;&gt;[]</span>
-</code></pre>
-
-<a href="#wrap-a-function-that-can-throw-using-fromthrowable" id="wrap-a-function-that-can-throw-using-fromthrowable" style="color: inherit; text-decoration: none;">
-  <h3>Wrap a function that can throw, using <code>.fromThrowable(...)</code>.</h3>
-</a>
-<pre><code class="language-ts"><span class="hl-8">import</span><span class="hl-1"> { </span><span class="hl-0">fromThrowable</span><span class="hl-1"> } </span><span class="hl-8">from</span><span class="hl-1"> </span><span class="hl-3">&quot;esresult&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-4">// throwable</span><br/><span class="hl-2">function</span><span class="hl-1"> </span><span class="hl-6">fn</span><span class="hl-1">() { </span><span class="hl-8">throw</span><span class="hl-1"> </span><span class="hl-2">new</span><span class="hl-1"> </span><span class="hl-9">Error</span><span class="hl-1">(...); }</span><br/><br/><span class="hl-4">// wrap</span><br/><span class="hl-2">const</span><span class="hl-1"> </span><span class="hl-5">safeFn</span><span class="hl-1"> = </span><span class="hl-6">fromThrowable</span><span class="hl-1">(</span><span class="hl-0">fn</span><span class="hl-1">);</span><br/><br/><span class="hl-4">// safely call with Result</span><br/><span class="hl-2">const</span><span class="hl-1"> </span><span class="hl-5">$result</span><span class="hl-1"> = </span><span class="hl-6">safeFn</span><span class="hl-1">(...);</span><br/><br/><span class="hl-4">// thrown error is available as `$result.error`</span><br/><span class="hl-8">if</span><span class="hl-1"> (!</span><span class="hl-0">$result</span><span class="hl-1">.</span><span class="hl-0">ok</span><span class="hl-1">) </span><span class="hl-8">return</span><span class="hl-1"> </span><span class="hl-6">err</span><span class="hl-1">(...).</span><span class="hl-6">$cause</span><span class="hl-1">(</span><span class="hl-0">$result</span><span class="hl-1">);</span>
-</code></pre>
-
-<a href="#fallback-to-unstructured-error-using-errprimitive" id="fallback-to-unstructured-error-using-errprimitive" style="color: inherit; text-decoration: none;">
-  <h3>Fallback to unstructured Error, using <code>err.primitive(...)</code>.</h3>
-</a>
-<p>If you&#39;re unable to use <code>fromThrowable</code> to wrap a throwing function, or you just
-really don&#39;t want to use a structured error type, you can create an primitive
-<code>err</code> using anything for its <code>error</code> value.</p>
-<pre><code class="language-ts"><span class="hl-4">// primitive/unstructured err</span><br/><span class="hl-2">const</span><span class="hl-1"> </span><span class="hl-5">$</span><span class="hl-1"> = </span><span class="hl-0">err</span><span class="hl-1">.</span><span class="hl-6">primitive</span><span class="hl-1">(</span><span class="hl-2">new</span><span class="hl-1"> </span><span class="hl-9">TypeError</span><span class="hl-1">(...));</span><br/><br/><span class="hl-0">$</span><span class="hl-1">.</span><span class="hl-0">ok</span><span class="hl-1">      </span><span class="hl-4">// false</span><br/><span class="hl-0">$</span><span class="hl-1">.</span><span class="hl-0">error</span><span class="hl-1">   </span><span class="hl-4">// TypeError</span>
-</code></pre>
-
-<a href="#motivation" id="motivation" style="color: inherit; text-decoration: none;">
-  <h2>Motivation</h2>
-</a>
-<p>Heavily inspired by:</p>
+<p><code>esresult</code> (ECMA-Script Result) is a tiny, zero-dependency, TypeScript-first,
+result/error utility.</p>
+<p>It helps you easily represent errors as part of your functions&#39; signatures so
+that:</p>
 <ul>
-<li><a href="https://www.npmjs.com/package/neverthrow"><code>neverthrow</code></a>
-(<a href="https://www.npmjs.com/package/neverthrow">npm</a>,
-<a href="https://github.com/supermacro/neverthrow">github</a>)</li>
-<li>Rust&#39;s <a href="https://doc.rust-lang.org/std/result/enum.Result.html"><code>Result</code></a> type.</li>
+<li>you don&#39;t need to maintain <a href="https://jsdoc.app/tags-throws.html"><code>@throws</code> jsdoc
+annotations</a>,</li>
+<li>you don&#39;t need to write <a href="https://javascript.info/custom-errors"><code>Error</code> subclasses
+boilerplate</a>,</li>
+<li>you don&#39;t need to return arbitary values like <code>-1</code>
+(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/findIndex#return_value"><code>Array.findIndex</code></a>)
+or <code>null</code>
+(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/match#return_value"><code>String.match</code></a>)
+to indicate an error,</li>
+<li>you don&#39;t need to fallback to <code>let</code> just to use a variable assigned from
+<a href="https://stackoverflow.com/a/43090730">within a <code>try/catch</code> closure</a>.</li>
 </ul>
+<br/>
+
+
+<a href="#why-does-esresult-exist" id="why-does-esresult-exist" style="color: inherit; text-decoration: none;">
+  <h1>Why does <code>esresult</code> exist?</h1>
+</a>
+<p>You will be writing a lot of functions.</p>
+<pre><code class="language-ts"><span class="hl-0">function</span><span class="hl-1"> </span><span class="hl-2">fn</span><span class="hl-1">() {</span><br/><span class="hl-1">    ...</span><br/><span class="hl-1">}</span>
+</code></pre>
+<p>Your functions will often need to return some kind of value.</p>
+<pre><code class="language-ts"><span class="hl-0">function</span><span class="hl-1"> </span><span class="hl-2">fn</span><span class="hl-1">(): </span><span class="hl-3">string</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-4">return</span><span class="hl-1"> </span><span class="hl-5">value</span><span class="hl-1">;</span><br/><span class="hl-1">}</span>
+</code></pre>
+<p>And will probably need to report errors of some kind.</p>
+<pre><code class="language-ts"><span class="hl-0">function</span><span class="hl-1"> </span><span class="hl-2">fn</span><span class="hl-1">(): </span><span class="hl-3">string</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-4">if</span><span class="hl-1"> (</span><span class="hl-5">condition</span><span class="hl-1">)</span><br/><span class="hl-1">        </span><span class="hl-4">throw</span><span class="hl-1"> </span><span class="hl-0">new</span><span class="hl-1"> </span><span class="hl-3">Error</span><span class="hl-1">(</span><span class="hl-6">&quot;NotFound&quot;</span><span class="hl-1">);</span><br/><span class="hl-1">    </span><span class="hl-4">return</span><span class="hl-1"> </span><span class="hl-5">value</span><span class="hl-1">;</span><br/><span class="hl-1">}</span>
+</code></pre>
+<p>You will probably have many different types of errors, so you make subclasses of
+<code>Error</code>.</p>
+<pre><code class="language-ts"><span class="hl-0">class</span><span class="hl-1"> </span><span class="hl-3">NotFoundError</span><span class="hl-1"> </span><span class="hl-0">extends</span><span class="hl-1"> </span><span class="hl-3">Error</span><span class="hl-1"> {}</span><br/><span class="hl-0">class</span><span class="hl-1"> </span><span class="hl-3">DatabaseQueryFailedError</span><span class="hl-1"> </span><span class="hl-0">extends</span><span class="hl-1"> </span><span class="hl-3">Error</span><span class="hl-1"> {}</span><br/><br/><span class="hl-0">function</span><span class="hl-1"> </span><span class="hl-2">fn</span><span class="hl-1">(): </span><span class="hl-3">string</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-4">if</span><span class="hl-1"> (</span><span class="hl-5">condition</span><span class="hl-1">)</span><br/><span class="hl-1">        </span><span class="hl-4">throw</span><span class="hl-1"> </span><span class="hl-0">new</span><span class="hl-1"> </span><span class="hl-2">NotFoundError</span><span class="hl-1">();</span><br/><span class="hl-1">    </span><span class="hl-4">if</span><span class="hl-1"> (</span><span class="hl-5">condition</span><span class="hl-1">)</span><br/><span class="hl-1">        </span><span class="hl-4">throw</span><span class="hl-1"> </span><span class="hl-0">new</span><span class="hl-1"> </span><span class="hl-2">DatabaseQueryFailedError</span><span class="hl-1">();</span><br/><span class="hl-1">    </span><span class="hl-4">return</span><span class="hl-1"> </span><span class="hl-5">value</span><span class="hl-1">;</span><br/><span class="hl-1">}</span>
+</code></pre>
+<p>Traditionally, you will use <code>throw</code> to report error; and it would be best to
+document this behaviour somehow.</p>
+<pre><code class="language-ts"><span class="hl-0">class</span><span class="hl-1"> </span><span class="hl-3">NotFoundError</span><span class="hl-1"> </span><span class="hl-0">extends</span><span class="hl-1"> </span><span class="hl-3">Error</span><span class="hl-1"> {}</span><br/><span class="hl-0">class</span><span class="hl-1"> </span><span class="hl-3">DatabaseQueryFailedError</span><span class="hl-1"> </span><span class="hl-0">extends</span><span class="hl-1"> </span><span class="hl-3">Error</span><span class="hl-1"> {}</span><br/><br/><span class="hl-7">/**</span><br/><span class="hl-7"> * </span><span class="hl-0">@throws</span><span class="hl-7"> </span><span class="hl-3">{NotFoundError}</span><span class="hl-7"> If the record can&#39;t be found.</span><br/><span class="hl-7"> * </span><span class="hl-0">@throws</span><span class="hl-7"> </span><span class="hl-3">{DatabaseQueryError}</span><span class="hl-7"> If there is an error communicating with the database.</span><br/><span class="hl-7"> * </span><span class="hl-0">@throws</span><span class="hl-7"> </span><span class="hl-3">{FooError}</span><span class="hl-7"> An error we forgot to remove from the documentation many releases ago.</span><br/><span class="hl-7"> */</span><br/><span class="hl-0">function</span><span class="hl-1"> </span><span class="hl-2">fn</span><span class="hl-1">(): </span><span class="hl-3">string</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-4">if</span><span class="hl-1"> (</span><span class="hl-5">condition</span><span class="hl-1">)</span><br/><span class="hl-1">        </span><span class="hl-4">throw</span><span class="hl-1"> </span><span class="hl-0">new</span><span class="hl-1"> </span><span class="hl-2">NotFoundError</span><span class="hl-1">();</span><br/><span class="hl-1">    </span><span class="hl-4">if</span><span class="hl-1"> (</span><span class="hl-5">condition</span><span class="hl-1">)</span><br/><span class="hl-1">        </span><span class="hl-4">throw</span><span class="hl-1"> </span><span class="hl-0">new</span><span class="hl-1"> </span><span class="hl-2">DatabaseQueryFailedError</span><span class="hl-1">();</span><br/><span class="hl-1">    </span><span class="hl-4">return</span><span class="hl-1"> </span><span class="hl-5">value</span><span class="hl-1">;</span><br/><span class="hl-1">}</span>
+</code></pre>
+<p>If the <strong>caller</strong> wants to act conditionally for a particular error we also need
+to import those error classes for comparison.</p>
+<pre><code class="language-ts"><span class="hl-4">import</span><span class="hl-1"> { </span><span class="hl-5">fn</span><span class="hl-1">, </span><span class="hl-5">NotFoundError</span><span class="hl-1"> } </span><span class="hl-4">from</span><span class="hl-1"> </span><span class="hl-6">&quot;./fn&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-4">try</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-0">const</span><span class="hl-1"> </span><span class="hl-8">value</span><span class="hl-1"> = </span><span class="hl-2">fn</span><span class="hl-1">();</span><br/><span class="hl-1">} </span><span class="hl-4">catch</span><span class="hl-1"> (</span><span class="hl-5">e</span><span class="hl-1">) {</span><br/><span class="hl-1">    </span><span class="hl-4">if</span><span class="hl-1"> (</span><span class="hl-5">e</span><span class="hl-1"> </span><span class="hl-0">instanceof</span><span class="hl-1"> </span><span class="hl-3">NotFoundError</span><span class="hl-1">) {</span><br/><span class="hl-1">        ...</span><br/><span class="hl-1">    }</span><br/><span class="hl-1">}</span>
+</code></pre>
+<p>If the value returned by <code>fn()</code> (from within the <code>try</code> block) is needed later,
+the <strong>caller</strong> needs to use <code>let</code> outside of the <code>try</code> block to then assign it
+from within.</p>
+<pre><code class="language-ts"><span class="hl-4">import</span><span class="hl-1"> { </span><span class="hl-5">fn</span><span class="hl-1">, </span><span class="hl-5">NotFoundError</span><span class="hl-1"> } </span><span class="hl-4">from</span><span class="hl-1"> </span><span class="hl-6">&quot;./fn&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-0">let</span><span class="hl-1"> </span><span class="hl-5">value</span><span class="hl-1">: </span><span class="hl-3">string</span><span class="hl-1"> | </span><span class="hl-3">undefined</span><span class="hl-1"> = </span><span class="hl-0">undefined</span><span class="hl-1">;</span><br/><span class="hl-4">try</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-5">value</span><span class="hl-1"> = </span><span class="hl-2">fn</span><span class="hl-1">();</span><br/><span class="hl-1">} </span><span class="hl-4">catch</span><span class="hl-1"> (</span><span class="hl-5">e</span><span class="hl-1">) {</span><br/><span class="hl-1">    </span><span class="hl-4">if</span><span class="hl-1"> (</span><span class="hl-5">e</span><span class="hl-1"> </span><span class="hl-0">instanceof</span><span class="hl-1"> </span><span class="hl-3">NotFoundError</span><span class="hl-1">) {</span><br/><span class="hl-1">        ...</span><br/><span class="hl-1">    }</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-5">console</span><span class="hl-1">.</span><span class="hl-2">log</span><span class="hl-1">(</span><span class="hl-5">value</span><span class="hl-1">);</span><br/><span class="hl-1">            ^ </span><span class="hl-7">// string | undefined</span>
+</code></pre>
+<p>This &quot;simple&quot; function:</p>
+<ul>
+<li>needs <strong>too much boilerplate code</strong> to express errors,</li>
+<li>needs the <strong>caller</strong> to read the docs to learn of possible error behaviour so
+that it may safely handle these error-cases,</li>
+<li>needs the <strong>caller</strong> to litter their code with let &amp; try/catch blocks to
+properly scope returned values,</li>
+<li>needs the <strong>caller</strong> to perform additional imports of error subclasses just to
+compare error instances,</li>
+<li>AND, if the function adds (or removes) error behaviour, <strong>static analysis will
+not notice</strong>.</li>
+</ul>
+<br/>
+
+
+<a href="#using-esresult-instead" id="using-esresult-instead" style="color: inherit; text-decoration: none;">
+  <h2>Using <code>esresult</code> instead!</h2>
+</a>
+<p>What if we could instead reduce all this into something smaller and more
+human-friendly with <code>esresult</code>?</p>
+<ul>
+<li>No error subclasses needed, and are now part of the function&#39;s signature.</li>
+</ul>
+<pre><code class="language-ts"><span class="hl-4">import</span><span class="hl-1"> </span><span class="hl-5">Result</span><span class="hl-1"> </span><span class="hl-4">from</span><span class="hl-1"> </span><span class="hl-6">&quot;esresult&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-0">function</span><span class="hl-1"> </span><span class="hl-2">fn</span><span class="hl-1">(): </span><span class="hl-3">Result</span><span class="hl-1">&lt;</span><span class="hl-3">string</span><span class="hl-1">, </span><span class="hl-6">&quot;NotFound&quot;</span><span class="hl-1"> | </span><span class="hl-6">&quot;DatabaseQueryFailed&quot;</span><span class="hl-1">&gt; {</span><br/><span class="hl-1">    </span><span class="hl-4">if</span><span class="hl-1"> (</span><span class="hl-5">condition</span><span class="hl-1">)</span><br/><span class="hl-1">        </span><span class="hl-4">return</span><span class="hl-1"> </span><span class="hl-5">Result</span><span class="hl-1">.</span><span class="hl-2">error</span><span class="hl-1">(</span><span class="hl-6">&quot;NotFound&quot;</span><span class="hl-1">);</span><br/><span class="hl-1">    </span><span class="hl-4">if</span><span class="hl-1"> (</span><span class="hl-5">condition</span><span class="hl-1">)</span><br/><span class="hl-1">        </span><span class="hl-4">return</span><span class="hl-1"> </span><span class="hl-5">Result</span><span class="hl-1">.</span><span class="hl-2">error</span><span class="hl-1">(</span><span class="hl-6">&quot;DatabaseQueryFailed&quot;</span><span class="hl-1">);</span><br/><span class="hl-1">    </span><span class="hl-4">return</span><span class="hl-1"> </span><span class="hl-2">Result</span><span class="hl-1">(</span><span class="hl-5">value</span><span class="hl-1">);</span><br/><span class="hl-1">}</span>
+</code></pre>
+<ul>
+<li>No need to import anything else but the <code>fn</code> itself.</li>
+<li>No complications with let + try/catch to handle a particular error.</li>
+<li>All error types can be seen via intellisense/autocompletion.</li>
+<li>Ergonomically handle error cases and default value behaviours.</li>
+</ul>
+<pre><code class="language-ts"><span class="hl-4">import</span><span class="hl-1"> { </span><span class="hl-5">fn</span><span class="hl-1"> } </span><span class="hl-4">from</span><span class="hl-1"> </span><span class="hl-6">&quot;./fn&quot;</span><br/><br/><span class="hl-0">const</span><span class="hl-1"> </span><span class="hl-8">$value</span><span class="hl-1"> = </span><span class="hl-2">fn</span><span class="hl-1">();</span><br/><span class="hl-1">      ^ </span><span class="hl-7">// ? The Result object that may be of Value or Error.</span><br/><br/><span class="hl-4">if</span><span class="hl-1"> (</span><span class="hl-5">$value</span><span class="hl-1">.</span><span class="hl-5">error</span><span class="hl-1">?.</span><span class="hl-5">type</span><span class="hl-1"> === </span><span class="hl-6">&quot;NotFound&quot;</span><span class="hl-1">) {</span><br/><span class="hl-1">                  ^ </span><span class="hl-7">// &quot;NotFound&quot; | &quot;DatabaseQueryFailed&quot; | undefined</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-0">const</span><span class="hl-1"> </span><span class="hl-8">value</span><span class="hl-1"> = </span><span class="hl-5">$value</span><span class="hl-1">.</span><span class="hl-2">orUndefined</span><span class="hl-1">();</span><br/><span class="hl-1">      ^ </span><span class="hl-7">// string | undefined</span>
+</code></pre>
+<p>And if the function doesn&#39;t have any known error cases yet (as part of its
+signature), you can access the successful value directly, without needing to
+check <code>error</code> (it will always be <code>undefined</code>).</p>
+<pre><code class="language-ts"><span class="hl-4">import</span><span class="hl-1"> </span><span class="hl-5">Result</span><span class="hl-1"> </span><span class="hl-4">from</span><span class="hl-1"> </span><span class="hl-6">&quot;esresult&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-0">function</span><span class="hl-1"> </span><span class="hl-2">fn</span><span class="hl-1">(): </span><span class="hl-3">Result</span><span class="hl-1">&lt;</span><span class="hl-3">string</span><span class="hl-1">&gt; {</span><br/><span class="hl-1">    </span><span class="hl-4">return</span><span class="hl-1"> </span><span class="hl-2">Result</span><span class="hl-1">(</span><span class="hl-5">value</span><span class="hl-1">);</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-0">const</span><span class="hl-1"> [</span><span class="hl-8">value</span><span class="hl-1">] = </span><span class="hl-2">fn</span><span class="hl-1">();</span><br/><span class="hl-1">       ^ </span><span class="hl-7">// string</span>
+</code></pre>
+<p>And once you add (or remove) an error case, TypeScript will be able let you
+know.</p>
+<pre><code class="language-ts"><span class="hl-4">import</span><span class="hl-1"> </span><span class="hl-5">Result</span><span class="hl-1"> </span><span class="hl-4">from</span><span class="hl-1"> </span><span class="hl-6">&quot;esresult&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-0">function</span><span class="hl-1"> </span><span class="hl-2">fn</span><span class="hl-1">(): </span><span class="hl-3">Result</span><span class="hl-1">&lt;</span><span class="hl-3">string</span><span class="hl-1">, </span><span class="hl-6">&quot;Invalid&quot;</span><span class="hl-1">&gt; {</span><br/><span class="hl-1">    </span><span class="hl-4">if</span><span class="hl-1"> (</span><span class="hl-5">isInvalid</span><span class="hl-1">)</span><br/><span class="hl-1">        </span><span class="hl-4">return</span><span class="hl-1"> </span><span class="hl-5">Result</span><span class="hl-1">.</span><span class="hl-2">error</span><span class="hl-1">(</span><span class="hl-6">&quot;Invalid&quot;</span><span class="hl-1">);</span><br/><span class="hl-1">    </span><span class="hl-4">return</span><span class="hl-1"> </span><span class="hl-2">Result</span><span class="hl-1">(</span><span class="hl-5">value</span><span class="hl-1">);</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-0">const</span><span class="hl-1"> [</span><span class="hl-8">value</span><span class="hl-1">] = </span><span class="hl-2">fn</span><span class="hl-1">();</span><br/><span class="hl-1">      ^ </span><span class="hl-7">// ? Possible ResultError is not iterable! (You must handle the error case first.)</span>
+</code></pre>
+<br/>
+
+
+<a href="#how-does-esresult-work" id="how-does-esresult-work" style="color: inherit; text-decoration: none;">
+  <h1>How does <code>esresult</code> work?</h1>
+</a>
+<p><code>esresult</code> default exports <code>Result</code>, which is both a Type and a Function, as
+explained below.</p>
+<p><strong><code>Result</code> is a type generic</strong> that accepts <code>Value</code> and  <code>Error</code> type parameters
+to create a <a href="https://www.typescriptlang.org/docs/handbook/2/narrowing.html#discriminated-unions">discriminable
+union</a>
+of:</p>
+<ul>
+<li>An &quot;Ok&quot; Result,<ul>
+<li>which will <strong>always</strong> have a <strong><code>undefined</code></strong> <code>.error</code> property,</li>
+</ul>
+</li>
+<li>An &quot;Error&quot; Result,<ul>
+<li>which will <strong>always</strong> have a <strong>non-<code>undefined</code></strong> <code>.error</code> property,</li>
+<li>and <strong>does not have a <code>.value</code> property</strong>, therefore an &quot;Ok&quot; Result <strong>must
+be narrowed/discriminated first</strong>.</li>
+</ul>
+</li>
+</ul>
+<p>This means that checking for the <strong>truthiness</strong> of <code>.error</code> will easily
+discriminate between &quot;Ok&quot; and &quot;Error&quot; Results.</p>
+<ul>
+<li>If <strong><code>never</code></strong> is given for <code>Result</code>&#39;s <code>Value</code> parameter, only a union of
+&quot;Error&quot; is produced.</li>
+<li>Vice versa, if <strong><code>never</code></strong> is given for <code>Result</code>&#39;s <code>Error</code> parameter, only a
+union of &quot;Value&quot; is produced.</li>
+</ul>
+<p><strong><code>Result</code> is a function that produces an &quot;Ok&quot; Result object</strong>, whereby <code>Error</code>
+is <code>never</code>.</p>
+<p><strong><code>Result.error</code> is a function that produces an &quot;Error&quot; Result object</strong>, whereby
+<code>Value</code> is <code>never</code>.</p>
+<p>&quot;Error&quot; Result&#39;s can also contain <code>.meta</code> data about the error (e.g. current
+iteration index/value, failed input string, etc.).</p>
+<ul>
+<li>An Error&#39;s <code>meta</code> type can be defined via a tuple: <code>Result&lt;never, [&quot;MyError&quot;, { foo: string }]&gt;</code></li>
+<li>An &quot;Error&quot; Result object can be instantiated similarly:
+<code>Result.error([&quot;MyError&quot;, { foo: &quot;bar&quot; }]);</code></li>
+</ul>
+<p><code>esresult</code> works with simple objects as returned by <code>Result</code> and <code>Result.error</code>,
+of which follow a simple prototype chain:</p>
+<ul>
+<li>&quot;Ok&quot; Result object has, <code>Result.prototype</code> -&gt; <code>Object.prototype</code></li>
+<li>&quot;Error&quot; Result object has, <code>ResultError.prototype</code> -&gt; <code>Result.prototype</code> -&gt;
+<code>Object.prototype</code></li>
+</ul>
+<p>The <code>Result.prototype</code> defines methods such as <code>or()</code>, <code>orUndefined()</code>, and
+<code>orThrow()</code>.</p>
+<br/>
+
+
+<a href="#comparisons" id="comparisons" style="color: inherit; text-decoration: none;">
+  <h1>Comparisons</h1>
+</a>
+<p>How does <code>esresult</code> compare to other result/error handling libraries?</p>
+<ul>
+<li>Overall <code>esresult</code>:<ul>
+<li>is mechanically simple to discriminate on a single <code>.error</code> property.</li>
+<li>supports a simple (and fully typed) error shape mechanism that naturally
+supports auto-completion.</li>
+<li>supports causal chaining out-of-the-box so you don&#39;t need to use another
+library.</li>
+<li>relies on simple functions (or, orUndefined, etc) to reduce value-mapping
+complexity in favour of native TypeScript control flow.</li>
+</ul>
+</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>esresult</th>
+<th><a href="https://github.com/supermacro/neverthrow">neverthrow</a></th>
+<th><a href="https://github.com/joyent/node-verror">node-verror</a></th>
+<th><a href="https://github.com/badrap/result">@badrap/result</a></th>
+<th><a href="https://github.com/wiktor-obrebski/type-safe-errors">type-safe-errors</a></th>
+<th><a href="https://github.com/AlexGalays/space-monad">space-monad</a></th>
+<th><a href="https://github.com/patrickmichalina/typescript-monads">typescript-monads</a></th>
+<th><a href="https://github.com/sniptt-official/monads/tree/main/lib/result">monads</a></th>
+<th><a href="https://github.com/gvergnaud/ts-pattern">ts-pattern</a></th>
+<th><a href="https://github.com/swan-io/boxed">boxed</a></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Result discrimination</td>
+<td><strong>.error</strong></td>
+<td>.isOk() .isErr()</td>
+<td>N/A</td>
+<td>.isOk .isErr</td>
+<td>as inferred</td>
+<td>.isOk()  .isResult($)</td>
+<td>.isOk() .isErr()</td>
+<td>.isOk() .isErr()</td>
+<td>as inferred</td>
+<td>.isOk() .isErr()</td>
+</tr>
+<tr>
+<td>Free value access if no error def.</td>
+<td><strong>YES</strong></td>
+<td>No</td>
+<td>N/A</td>
+<td>No (must always discriminate; for errors too!)</td>
+<td><strong>YES</strong></td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td><strong>YES</strong></td>
+<td>No</td>
+</tr>
+<tr>
+<td>Error shapes (type/meta)</td>
+<td><strong>YES</strong></td>
+<td>No</td>
+<td><strong>YES</strong></td>
+<td>No (forces of type <code>Error</code>)</td>
+<td>No (encourages error instances)</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Error causal chaining</td>
+<td><strong>YES</strong></td>
+<td>No</td>
+<td><strong>YES</strong></td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Error type autocomplete</td>
+<td><strong>YES</strong></td>
+<td>No</td>
+<td>No (relies on throwing)</td>
+<td>No</td>
+<td><strong>YES</strong> (standard inferred)</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td><strong>YES</strong> (standard inferred)</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Wrap unsafe functions</td>
+<td><strong>YES</strong></td>
+<td><strong>YES</strong></td>
+<td>N/A</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>N/A</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Execute one-off unsafe functions</td>
+<td><strong>YES</strong></td>
+<td>No</td>
+<td>N/A</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>N/A</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Async types</td>
+<td><strong>YES</strong></td>
+<td><strong>YES</strong></td>
+<td>N/A</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>N/A</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Wrap unsafe async functions</td>
+<td><strong>YES</strong></td>
+<td><strong>YES</strong></td>
+<td>N/A</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>N/A</td>
+<td>No</td>
+</tr>
+<tr>
+<td>value access</td>
+<td><strong>or, orUndefined</strong></td>
+<td>map, mapErr, orElse (not type restricted)</td>
+<td>N/A</td>
+<td>unwrap (could throw if not verbose)</td>
+<td>map, mapErr</td>
+<td>map, orElse</td>
+<td>unwrap unwrapOr</td>
+<td>unwrap (throws), unwrapOr</td>
+<td>N/A</td>
+<td>match (not type restricted)</td>
+</tr>
+<tr>
+<td>orThrow (panic)</td>
+<td><strong>YES</strong></td>
+<td>No</td>
+<td>N/A</td>
+<td><strong>&quot;</strong></td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td><strong>YES</strong>, (exhaustive)</td>
+<td>No</td>
+</tr>
+<tr>
+<td><br/></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+
+<a href="#installation" id="installation" style="color: inherit; text-decoration: none;">
+  <h1>Installation</h1>
+</a>
+<pre><code class="language-bash"><span class="hl-1">$ npm install esresult</span>
+</code></pre>
+<br/>
+
+
+<a href="#usage" id="usage" style="color: inherit; text-decoration: none;">
+  <h1>Usage</h1>
+</a>
+
+<a href="#with-no-errors" id="with-no-errors" style="color: inherit; text-decoration: none;">
+  <h2>With no errors</h2>
+</a>
+<ul>
+<li>A simple function that returns a <code>string</code> without any defined errors.</li>
+</ul>
+<pre><code class="language-ts"><span class="hl-4">import</span><span class="hl-1"> </span><span class="hl-5">Result</span><span class="hl-1"> </span><span class="hl-4">from</span><span class="hl-1"> </span><span class="hl-6">&quot;esresult&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-0">function</span><span class="hl-1"> </span><span class="hl-2">fn</span><span class="hl-1">(): </span><span class="hl-3">Result</span><span class="hl-1">&lt;</span><span class="hl-3">string</span><span class="hl-1">&gt; {</span><br/><span class="hl-1">  </span><span class="hl-4">return</span><span class="hl-1"> </span><span class="hl-2">Result</span><span class="hl-1">(</span><span class="hl-6">&quot;string&quot;</span><span class="hl-1">);</span><br/><span class="hl-1">}</span>
+</code></pre>
+<ul>
+<li>Because the <code>Result</code> signature has no defined errors the caller doesn&#39;t need
+to handle anything else.</li>
+</ul>
+<pre><code class="language-ts"><span class="hl-0">const</span><span class="hl-1"> [</span><span class="hl-8">value</span><span class="hl-1">] = </span><span class="hl-2">fn</span><span class="hl-1">();</span>
+</code></pre>
+<br/>
+
+
+<a href="#with-one-error" id="with-one-error" style="color: inherit; text-decoration: none;">
+  <h2>With one error</h2>
+</a>
+<ul>
+<li>A function that returns a string or a <code>&quot;NotFound&quot;</code> error.</li>
+</ul>
+<pre><code class="language-ts"><span class="hl-0">function</span><span class="hl-1"> </span><span class="hl-2">fn</span><span class="hl-1">(): </span><span class="hl-3">Result</span><span class="hl-1">&lt;</span><span class="hl-3">string</span><span class="hl-1">, </span><span class="hl-6">&quot;NotFound&quot;</span><span class="hl-1">&gt; {</span><br/><span class="hl-1">  </span><span class="hl-4">return</span><span class="hl-1"> </span><span class="hl-2">Result</span><span class="hl-1">(</span><span class="hl-6">&quot;string&quot;</span><span class="hl-1">);</span><br/><span class="hl-1">  </span><span class="hl-4">return</span><span class="hl-1"> </span><span class="hl-5">Result</span><span class="hl-1">.</span><span class="hl-2">error</span><span class="hl-1">(</span><span class="hl-6">&quot;NotFound&quot;</span><span class="hl-1">);</span><br/><span class="hl-1">}</span>
+</code></pre>
+<ul>
+<li>The returned <code>Result</code> may be an error, as determined by its <code>.error</code> property.</li>
+</ul>
+<br/>
+
+
+<a href="#-use-value-or-a-default-value-on-error" id="-use-value-or-a-default-value-on-error" style="color: inherit; text-decoration: none;">
+  <h3>... use value, or a default value on error</h3>
+</a>
+<ul>
+<li>You may provide a default value of matching type to the expected value of the
+Result.</li>
+</ul>
+<pre><code class="language-ts"><span class="hl-0">const</span><span class="hl-1"> </span><span class="hl-8">valueOrDefault</span><span class="hl-1"> = </span><span class="hl-2">fn</span><span class="hl-1">().</span><span class="hl-2">or</span><span class="hl-1">(</span><span class="hl-6">&quot;default&quot;</span><span class="hl-1">);</span>
+</code></pre>
+<br/>
+
+
+<a href="#-use-value-or-undefined-on-error" id="-use-value-or-undefined-on-error" style="color: inherit; text-decoration: none;">
+  <h3>... use value, or <code>undefined</code> on error</h3>
+</a>
+<ul>
+<li>Or you may default to <code>undefined</code> in the case of an error.</li>
+</ul>
+<pre><code class="language-ts"><span class="hl-0">const</span><span class="hl-1"> </span><span class="hl-8">valueOrUndefined</span><span class="hl-1"> = </span><span class="hl-2">fn</span><span class="hl-1">().</span><span class="hl-2">orUndefined</span><span class="hl-1">();</span>
+</code></pre>
+<br/>
+
+
+<a href="#-use-value-or-throw-on-error" id="-use-value-or-throw-on-error" style="color: inherit; text-decoration: none;">
+  <h3>... use value, or <code>throw</code> on error</h3>
+</a>
+<ul>
+<li>Or you may <strong>crash your program when in an undefined state that should never
+happen</strong> (e.g. initialisation code).<ul>
+<li>Don&#39;t use <code>.orThrow</code> with try/catch blocks as this defeats the purpose of
+the <code>Result</code> object itself.</li>
+</ul>
+</li>
+</ul>
+<pre><code class="language-ts"><span class="hl-0">const</span><span class="hl-1"> </span><span class="hl-8">value</span><span class="hl-1"> = </span><span class="hl-2">fn</span><span class="hl-1">().</span><span class="hl-2">orThrow</span><span class="hl-1">();</span>
+</code></pre>
+<br/>
+
+
+<a href="#-use-value-after-handling-error" id="-use-value-after-handling-error" style="color: inherit; text-decoration: none;">
+  <h3>... use value, after handling error</h3>
+</a>
+<ul>
+<li>You can use the <code>Result</code> object directly to handle specific error cases and
+create <a href="#error-chains">error chains</a>.</li>
+</ul>
+<pre><code class="language-ts"><span class="hl-0">const</span><span class="hl-1"> </span><span class="hl-8">$</span><span class="hl-1"> = </span><span class="hl-2">fn</span><span class="hl-1">();</span><br/><span class="hl-4">if</span><span class="hl-1"> (</span><span class="hl-5">$</span><span class="hl-1">.</span><span class="hl-5">error</span><span class="hl-1">)</span><br/><span class="hl-1">  </span><span class="hl-4">return</span><span class="hl-1"> </span><span class="hl-5">Result</span><span class="hl-1">.</span><span class="hl-2">error</span><span class="hl-1">(</span><span class="hl-6">&quot;FnFailed&quot;</span><span class="hl-1">, { </span><span class="hl-5">cause:</span><span class="hl-1"> </span><span class="hl-5">$</span><span class="hl-1"> })</span><br/><br/><span class="hl-0">const</span><span class="hl-1"> [</span><span class="hl-8">value</span><span class="hl-1">] = </span><span class="hl-5">$</span><span class="hl-1">;</span>
+</code></pre>
+<br/>
+
+
+<a href="#with-many-errors" id="with-many-errors" style="color: inherit; text-decoration: none;">
+  <h2>With many errors</h2>
+</a>
+<ul>
+<li>You can provide a union of error types to define many possible errors.</li>
+</ul>
+<pre><code class="language-ts"><span class="hl-0">function</span><span class="hl-1"> </span><span class="hl-2">fn</span><span class="hl-1">(): </span><span class="hl-3">Result</span><span class="hl-1">&lt;</span><span class="hl-3">string</span><span class="hl-1">, </span><span class="hl-6">&quot;NotFound&quot;</span><span class="hl-1"> | </span><span class="hl-6">&quot;NotAllowed&quot;</span><span class="hl-1">&gt; {</span><br/><span class="hl-1">  </span><span class="hl-4">return</span><span class="hl-1"> </span><span class="hl-2">Result</span><span class="hl-1">(</span><span class="hl-6">&quot;string&quot;</span><span class="hl-1">);</span><br/><span class="hl-1">  </span><span class="hl-4">return</span><span class="hl-1"> </span><span class="hl-5">Result</span><span class="hl-1">.</span><span class="hl-2">error</span><span class="hl-1">(</span><span class="hl-6">&quot;NotFound&quot;</span><span class="hl-1">);</span><br/><span class="hl-1">  </span><span class="hl-4">return</span><span class="hl-1"> </span><span class="hl-5">Result</span><span class="hl-1">.</span><span class="hl-2">error</span><span class="hl-1">(</span><span class="hl-6">&quot;NotAllowed&quot;</span><span class="hl-1">);</span><br/><span class="hl-1">}</span>
+</code></pre>
+<pre><code class="language-ts"><span class="hl-0">const</span><span class="hl-1"> </span><span class="hl-8">$</span><span class="hl-1"> = </span><span class="hl-2">fn</span><span class="hl-1">();</span><br/><br/><span class="hl-4">if</span><span class="hl-1"> (</span><span class="hl-5">$</span><span class="hl-1">.</span><span class="hl-5">error</span><span class="hl-1">) {</span><br/><span class="hl-1">  </span><span class="hl-5">$</span><span class="hl-1">.</span><span class="hl-5">error</span><span class="hl-1">.</span><span class="hl-5">type</span><br/><span class="hl-1">          ^ </span><span class="hl-7">// &quot;NotFound&quot; | &quot;NotAllowed&quot;</span><br/><span class="hl-1">}</span>
+</code></pre>
+<br/>
+
+
+<a href="#with-detailed-errors" id="with-detailed-errors" style="color: inherit; text-decoration: none;">
+  <h2>With detailed errors</h2>
+</a>
+<ul>
+<li>You can add typed <code>meta</code> information to allowing callers to parse more from
+your error.<ul>
+<li>Provide a tuple with the error type and the meta type/shape to use.</li>
+</ul>
+</li>
+</ul>
+<pre><code class="language-ts"><span class="hl-0">function</span><span class="hl-1"> </span><span class="hl-2">fn</span><span class="hl-1">(): </span><span class="hl-3">Result</span><span class="hl-1">&lt;</span><br/><span class="hl-1">  </span><span class="hl-3">string</span><span class="hl-1">,</span><br/><span class="hl-1">    | </span><span class="hl-6">&quot;NotFound&quot;</span><br/><span class="hl-1">    | </span><span class="hl-6">&quot;NotAllowed&quot;</span><br/><span class="hl-1">    | [</span><span class="hl-6">&quot;QueryFailed&quot;</span><span class="hl-1">, { </span><span class="hl-5">query</span><span class="hl-1">: </span><span class="hl-3">Record</span><span class="hl-1">&lt;</span><span class="hl-3">string</span><span class="hl-1">, </span><span class="hl-3">unknown</span><span class="hl-1">&gt;; }]</span><br/><span class="hl-1">&gt; {</span><br/><span class="hl-1">  </span><span class="hl-4">return</span><span class="hl-1"> </span><span class="hl-2">Result</span><span class="hl-1">(</span><span class="hl-6">&quot;string&quot;</span><span class="hl-1">);</span><br/><span class="hl-1">  </span><span class="hl-4">return</span><span class="hl-1"> </span><span class="hl-5">Result</span><span class="hl-1">.</span><span class="hl-2">error</span><span class="hl-1">(</span><span class="hl-6">&quot;NotFound&quot;</span><span class="hl-1">);</span><br/><span class="hl-1">  </span><span class="hl-4">return</span><span class="hl-1"> </span><span class="hl-5">Result</span><span class="hl-1">.</span><span class="hl-2">error</span><span class="hl-1">(</span><span class="hl-6">&quot;NotAllowed&quot;</span><span class="hl-1">);</span><br/><span class="hl-1">  </span><span class="hl-4">return</span><span class="hl-1"> </span><span class="hl-5">Result</span><span class="hl-1">.</span><span class="hl-2">error</span><span class="hl-1">([</span><span class="hl-6">&quot;QueryFailed&quot;</span><span class="hl-1">, { </span><span class="hl-5">query:</span><span class="hl-1"> { </span><span class="hl-5">a:</span><span class="hl-1"> </span><span class="hl-9">1</span><span class="hl-1">, </span><span class="hl-5">b:</span><span class="hl-1"> </span><span class="hl-9">2</span><span class="hl-1"> } }])</span><br/><span class="hl-1">                      ^ </span><span class="hl-7">// ? Providing a tuple that matches the definition&#39;s shape.</span><br/><span class="hl-1">}</span>
+</code></pre>
+<ul>
+<li>To access the <code>meta</code> property with the correct type, you will need to
+discriminate by <code>.error.type</code> first.</li>
+</ul>
+<pre><code class="language-ts"><span class="hl-0">const</span><span class="hl-1"> </span><span class="hl-8">$</span><span class="hl-1"> = </span><span class="hl-2">fn</span><span class="hl-1">();</span><br/><br/><span class="hl-4">if</span><span class="hl-1"> (</span><span class="hl-5">$</span><span class="hl-1">.</span><span class="hl-5">error</span><span class="hl-1">) {</span><br/><span class="hl-1">  </span><span class="hl-4">if</span><span class="hl-1"> (</span><span class="hl-5">$</span><span class="hl-1">.</span><span class="hl-5">error</span><span class="hl-1">.</span><span class="hl-5">type</span><span class="hl-1"> === </span><span class="hl-6">&quot;QueryFailed&quot;</span><span class="hl-1">) {</span><br/><span class="hl-1">    </span><span class="hl-5">$</span><span class="hl-1">.</span><span class="hl-5">error</span><span class="hl-1">.</span><span class="hl-5">meta</span><br/><span class="hl-1">            ^ </span><span class="hl-7">// { query: Record&lt;string, unknown&gt; }</span><br/><span class="hl-1">  } </span><span class="hl-4">else</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-5">$</span><span class="hl-1">.</span><span class="hl-5">error</span><span class="hl-1">.</span><span class="hl-5">meta</span><br/><span class="hl-1">            ^ </span><span class="hl-7">// undefined ? Only &quot;QueryFailed&quot; has a meta property definition.</span><br/><span class="hl-1">  }</span><br/><span class="hl-1">}</span>
+</code></pre>
+<br/>
+
+
+<a href="#async-functions" id="async-functions" style="color: inherit; text-decoration: none;">
+  <h2>Async functions</h2>
+</a>
+<ul>
+<li>Use <code>Result.Async</code> as a shortcut for <code>Promise&lt;Result&gt;</code>.</li>
+</ul>
+<pre><code class="language-ts"><span class="hl-0">async</span><span class="hl-1"> </span><span class="hl-0">function</span><span class="hl-1"> </span><span class="hl-2">fn</span><span class="hl-1">(): </span><span class="hl-3">Result</span><span class="hl-1">.</span><span class="hl-3">Async</span><span class="hl-1">&lt;</span><span class="hl-3">string</span><span class="hl-1">, </span><span class="hl-6">&quot;Error&quot;</span><span class="hl-1">&gt; {</span><br/><span class="hl-1">  </span><span class="hl-4">return</span><span class="hl-1"> </span><span class="hl-2">Result</span><span class="hl-1">(</span><span class="hl-6">&quot;string&quot;</span><span class="hl-1">);</span><br/><span class="hl-1">  </span><span class="hl-4">return</span><span class="hl-1"> </span><span class="hl-5">Result</span><span class="hl-1">.</span><span class="hl-2">error</span><span class="hl-1">(</span><span class="hl-6">&quot;Error&quot;</span><span class="hl-1">);</span><br/><span class="hl-1">}</span>
+</code></pre>
+<ul>
+<li>Results are just ordinary objects that are perfectly compatible with
+async/await control flows.</li>
+</ul>
+<pre><code class="language-ts"><span class="hl-0">const</span><span class="hl-1"> </span><span class="hl-8">$</span><span class="hl-1"> = </span><span class="hl-4">await</span><span class="hl-1"> </span><span class="hl-2">fn</span><span class="hl-1">();</span><br/><span class="hl-0">const</span><span class="hl-1"> </span><span class="hl-8">value</span><span class="hl-1"> = </span><span class="hl-5">$</span><span class="hl-1">.</span><span class="hl-2">or</span><span class="hl-1">(</span><span class="hl-6">&quot;default&quot;</span><span class="hl-1">);</span><br/><span class="hl-0">const</span><span class="hl-1"> </span><span class="hl-8">value</span><span class="hl-1"> = </span><span class="hl-5">$</span><span class="hl-1">.</span><span class="hl-2">orUndefined</span><span class="hl-1">();</span><br/><br/><span class="hl-4">if</span><span class="hl-1"> (</span><span class="hl-5">$</span><span class="hl-1">.</span><span class="hl-5">error</span><span class="hl-1">) {</span><br/><span class="hl-1">    </span><span class="hl-4">return</span><span class="hl-1">;</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-0">const</span><span class="hl-1"> [</span><span class="hl-8">value</span><span class="hl-1">] = </span><span class="hl-5">$</span><span class="hl-1">;</span>
+</code></pre>
+<br/>
+
+
+<a href="#chaining-errors" id="chaining-errors" style="color: inherit; text-decoration: none;">
+  <h2>Chaining errors</h2>
+</a>
+<ul>
+<li>Often you need will have a function calling another function that could also
+fail, upon which the caller will fail also.<ul>
+<li>You can provide a <code>cause</code> property to your returned error that will begin to
+form an error chain of domain-specific errors.</li>
+<li>Error chains are more useful than a traditional stack-traces because they
+are specific to your program&#39;s domain rather than representing an
+programming error resulting in undefined program behaviour.</li>
+</ul>
+</li>
+</ul>
+<pre><code class="language-ts"><span class="hl-0">function</span><span class="hl-1"> </span><span class="hl-2">main</span><span class="hl-1">(): </span><span class="hl-3">Result</span><span class="hl-1">&lt;</span><span class="hl-3">string</span><span class="hl-1">, </span><span class="hl-6">&quot;FooFailed&quot;</span><span class="hl-1">&gt; {</span><br/><span class="hl-1">    </span><span class="hl-0">const</span><span class="hl-1"> </span><span class="hl-8">$foo</span><span class="hl-1"> = </span><span class="hl-2">fn</span><span class="hl-1">();</span><br/><span class="hl-1">          ^ </span><span class="hl-7">// ? Returns a Result that may be an error.</span><br/><br/><span class="hl-1">    </span><span class="hl-4">if</span><span class="hl-1"> (</span><span class="hl-5">$foo</span><span class="hl-1">.</span><span class="hl-5">error</span><span class="hl-1">)</span><br/><span class="hl-1">        </span><span class="hl-4">return</span><span class="hl-1"> </span><span class="hl-5">Result</span><span class="hl-1">.</span><span class="hl-2">error</span><span class="hl-1">(</span><span class="hl-6">&quot;FooFailed&quot;</span><span class="hl-1">, { </span><span class="hl-5">cause:</span><span class="hl-1"> </span><span class="hl-5">$foo</span><span class="hl-1"> });</span><br/><br/><span class="hl-1">    </span><span class="hl-4">return</span><span class="hl-1"> </span><span class="hl-2">Result</span><span class="hl-1">(</span><span class="hl-5">value</span><span class="hl-1">);</span><br/><span class="hl-1">}</span>
+</code></pre>
+<br/>
+
+
+<a href="#wrap-throwable-functions-fn" id="wrap-throwable-functions-fn" style="color: inherit; text-decoration: none;">
+  <h2>Wrap throwable functions (.fn)</h2>
+</a>
+<ul>
+<li>Use <code>Result.fn</code> to wrap unsafe functions (including <code>async</code> functions) that
+<code>throw</code>.<ul>
+<li>The return type of the wrapped function is correctly inferred as the <code>Value</code>
+of the Result return signature.</li>
+<li>If the function <code>throw</code>s, the Error is captured in a <code>{ thrown: Error }</code>
+container.</li>
+</ul>
+</li>
+</ul>
+<pre><code class="language-ts"><span class="hl-0">const</span><span class="hl-1"> </span><span class="hl-8">parse</span><span class="hl-1"> = </span><span class="hl-5">Result</span><span class="hl-1">.</span><span class="hl-2">fn</span><span class="hl-1">(</span><span class="hl-3">JSON</span><span class="hl-1">.</span><span class="hl-2">parse</span><span class="hl-1">);</span><br/><span class="hl-1">      ^ </span><span class="hl-7">// (text: string, ...) =&gt; Result&lt;unknown, Thrown&gt;</span><br/><br/><span class="hl-0">const</span><span class="hl-1"> </span><span class="hl-8">$</span><span class="hl-1"> = </span><span class="hl-2">parse</span><span class="hl-1">(...);</span><br/><span class="hl-1">      ^ </span><span class="hl-7">// Result&lt;unknown, Thrown&gt;</span>
+</code></pre>
+<br/>
+
+
+<a href="#execute-throwable-functions-try" id="execute-throwable-functions-try" style="color: inherit; text-decoration: none;">
+  <h2>Execute throwable functions (.try)</h2>
+</a>
+<ul>
+<li>A shortcut method for <code>Result.fn(() =&gt; {})()</code>; offers a simple replacement for
+a try/catch block.<ul>
+<li>Accepts a function with no arguments and <strong>immediately invokes it</strong> and
+forwards its return value (if any) as a Result.</li>
+</ul>
+</li>
+</ul>
+<pre><code class="language-ts"><span class="hl-0">const</span><span class="hl-1"> </span><span class="hl-8">$</span><span class="hl-1"> = </span><span class="hl-5">Result</span><span class="hl-1">.</span><span class="hl-2">try</span><span class="hl-1">(() </span><span class="hl-0">=&gt;</span><span class="hl-1"> {});</span><br/><span class="hl-1">      ^ </span><span class="hl-7">// Result&lt;void, Thrown&gt;</span><br/><br/><span class="hl-0">const</span><span class="hl-1"> </span><span class="hl-8">$</span><span class="hl-1"> = </span><span class="hl-5">Result</span><span class="hl-1">.</span><span class="hl-2">try</span><span class="hl-1">(</span><span class="hl-0">async</span><span class="hl-1"> () </span><span class="hl-0">=&gt;</span><span class="hl-1"> {});</span><br/><span class="hl-1">      ^ </span><span class="hl-7">// Result.Async&lt;void, Thrown&gt;</span><br/><br/><span class="hl-0">const</span><span class="hl-1"> </span><span class="hl-8">$</span><span class="hl-1"> = </span><span class="hl-5">Result</span><span class="hl-1">.</span><span class="hl-2">try</span><span class="hl-1">(() </span><span class="hl-0">=&gt;</span><span class="hl-1"> </span><span class="hl-3">JSON</span><span class="hl-1">.</span><span class="hl-2">stringify</span><span class="hl-1">(...));</span><br/><span class="hl-1">      ^ </span><span class="hl-7">// Result&lt;string, Thrown&gt;</span>
+</code></pre>
+<br/>
+
+
+<a href="#helpers" id="helpers" style="color: inherit; text-decoration: none;">
+  <h1>Helpers</h1>
+</a>
+
+<a href="#json" id="json" style="color: inherit; text-decoration: none;">
+  <h2>JSON</h2>
+</a>
+<ul>
+<li>The built-in JSON <code>.parse</code> and <code>.stringify</code> methods are frequently used, so
+<code>esresult</code> offers a pre-wrapped drop-in <code>JSON</code> object replacement.<ul>
+<li>You can achieve the same result with <code>Result.fn(JSON.parse)</code> etc.</li>
+</ul>
+</li>
+</ul>
+<pre><code class="language-ts"><span class="hl-4">import</span><span class="hl-1"> { </span><span class="hl-5">JSON</span><span class="hl-1"> } </span><span class="hl-4">from</span><span class="hl-1"> </span><span class="hl-6">&quot;esresult&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-0">const</span><span class="hl-1"> </span><span class="hl-8">$</span><span class="hl-1"> = </span><span class="hl-3">JSON</span><span class="hl-1">.</span><span class="hl-2">parse</span><span class="hl-1">(...);</span><br/><span class="hl-1">      ^ </span><span class="hl-7">// Result&lt;unknown, Thrown&gt;</span><br/><br/><span class="hl-0">const</span><span class="hl-1"> </span><span class="hl-8">$</span><span class="hl-1"> = </span><span class="hl-3">JSON</span><span class="hl-1">.</span><span class="hl-2">stringify</span><span class="hl-1">(...);</span><br/><span class="hl-1">      ^ </span><span class="hl-7">// Result&lt;string, Thrown&gt;</span>
+</code></pre>
+<br/>
+
 
 <a href="#license" id="license" style="color: inherit; text-decoration: none;">
-  <h2>License</h2>
+  <h1>License</h1>
 </a>
 <p>Copyright (C) 2022 Peter Boyer</p>
-<p>Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at</p>
-<pre><code><span class="hl-10">http</span><span class="hl-1">:</span><span class="hl-4">//www.apache.org/licenses/LICENSE-2.0</span>
-</code></pre>
-<p>Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.</p>
-</div></div><div class="col-4 col-menu menu-sticky-wrap menu-highlight"><nav class="tsd-navigation primary"><ul><li class="current"><a href="modules.html">Exports</a></li><li class=" tsd-kind-namespace"><a href="modules/Result.html">Result</a></li><li class=" tsd-kind-namespace"><a href="modules/err.html">err</a></li></ul></nav><nav class="tsd-navigation secondary menu-sticky"><ul><li class="tsd-kind-class tsd-has-type-parameter"><a href="classes/Base.html" class="tsd-kind-icon">Base</a></li><li class="tsd-kind-class tsd-has-type-parameter"><a href="classes/Err.html" class="tsd-kind-icon">Err</a></li><li class="tsd-kind-class tsd-has-type-parameter"><a href="classes/Ok.html" class="tsd-kind-icon">Ok</a></li><li class="tsd-kind-type-alias tsd-has-type-parameter"><a href="modules.html#AsErr" class="tsd-kind-icon">As<wbr/>Err</a></li><li class="tsd-kind-type-alias tsd-has-type-parameter"><a href="modules.html#AsOk" class="tsd-kind-icon">As<wbr/>Ok</a></li><li class="tsd-kind-type-alias"><a href="modules.html#Cause" class="tsd-kind-icon">Cause</a></li><li class="tsd-kind-type-alias"><a href="modules.html#ErrAny" class="tsd-kind-icon">Err<wbr/>Any</a></li><li class="tsd-kind-type-alias"><a href="modules.html#Message" class="tsd-kind-icon">Message</a></li><li class="tsd-kind-type-alias"><a href="modules.html#OkAny" class="tsd-kind-icon">Ok<wbr/>Any</a></li><li class="tsd-kind-type-alias tsd-has-type-parameter"><a href="modules.html#Result" class="tsd-kind-icon">Result</a></li><li class="tsd-kind-type-alias tsd-has-type-parameter"><a href="modules.html#ResultAsync" class="tsd-kind-icon">Result<wbr/>Async</a></li><li class="tsd-kind-function tsd-has-type-parameter"><a href="modules.html#err" class="tsd-kind-icon">err</a></li><li class="tsd-kind-function tsd-has-type-parameter"><a href="modules.html#fromThrowable" class="tsd-kind-icon">from<wbr/>Throwable</a></li><li class="tsd-kind-function tsd-has-type-parameter"><a href="modules.html#ok" class="tsd-kind-icon">ok</a></li></ul></nav></div></div></div><footer class="with-border-bottom"><div class="container"><h2>Legend</h2><div class="tsd-legend-group"><ul class="tsd-legend"><li class="tsd-kind-property tsd-parent-kind-class"><span class="tsd-kind-icon">Property</span></li><li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li></ul><ul class="tsd-legend"><li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited property</span></li></ul><ul class="tsd-legend"><li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private property</span></li></ul><ul class="tsd-legend"><li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static method</span></li></ul></div><h2>Settings</h2><p>Theme <select id="theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></p></div></footer><div class="container tsd-generator"><p>Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></div><div class="overlay"></div><script src="assets/main.js"></script></body></html>
+<p>esresult is licensed under the <a href="./LICENSE">MIT License</a>, a short and simple
+permissive license with conditions only requiring preservation of copyright and
+license notices. Licensed works, modifications, and larger works may be
+distributed under different terms and without source code.</p>
+</div></div><div class="col-4 col-menu menu-sticky-wrap menu-highlight"><nav class="tsd-navigation primary"><ul><li class="current"><a href="modules.html">Exports</a></li><li class=" tsd-kind-namespace"><a href="modules/JSON.html">JSON</a></li><li class=" tsd-kind-namespace"><a href="modules/Result.html">Result</a></li></ul></nav><nav class="tsd-navigation secondary menu-sticky"><ul><li class="tsd-kind-reference"><a href="modules.html#default" class="tsd-kind-icon">default</a></li><li class="tsd-kind-type-alias tsd-has-type-parameter"><a href="modules.html#Result" class="tsd-kind-icon">Result</a></li><li class="tsd-kind-type-alias"><a href="modules.html#Thrown" class="tsd-kind-icon">Thrown</a></li><li class="tsd-kind-function tsd-has-type-parameter"><a href="modules.html#Result" class="tsd-kind-icon">Result</a></li></ul></nav></div></div></div><footer class="with-border-bottom"><div class="container"><h2>Settings</h2><p>Theme <select id="theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></p></div></footer><div class="container tsd-generator"><p>Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></div><div class="overlay"></div><script src="assets/main.js"></script></body></html>
