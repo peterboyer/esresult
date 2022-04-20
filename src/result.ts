@@ -45,7 +45,7 @@ export function Result<VALUE>(value: VALUE): Result<VALUE, never> {
 }
 
 // allows array/iterator-based destructuring
-Result.prototype = Object.create(Array.prototype);
+Result.prototype[Symbol.iterator] = Array.prototype[Symbol.iterator];
 
 // inform the array iterator that it has 1 item, not undefined
 Result.prototype.length = 1;

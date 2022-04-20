@@ -98,6 +98,20 @@ describe("error", () => {
     expectType<() => never>($.orThrow);
   });
 
+  test("error interop with jest without array prototype", () => {
+    expect(
+      Result.error([
+        "MyError",
+        { errors: [Result.error(["AX", { ax: "hello" }])] },
+      ])
+    ).toMatchObject({
+      error: {
+        type: "MyError",
+        meta: { errors: [{ error: { type: "AX", meta: { ax: "hello" } } }] },
+      },
+    });
+  });
+
   test("async error", async () => {
     const $$ = (async () => Result.error("MyError"))();
     expectType<Result.Async<never, "MyError">>($$);
