@@ -31,6 +31,7 @@ describe("example", () => {
     const $user = await getUser("1");
     expect($user.error).toBeUndefined();
     expect($user.orUndefined()).toMatchObject({ id: "1", name: "Foo" });
+    expectType<() => User>($user.orThrow);
   });
 
   test("error", async () => {
@@ -44,6 +45,7 @@ describe("example", () => {
     if ($.error) {
       expectType<"IdInvalid" | "NotFound">($.error.type);
       expectType<undefined>($.error.meta);
+      expectType<() => never>($.orThrow);
     }
 
     const defaultUser: User = { id: "backup", name: "Backup" };

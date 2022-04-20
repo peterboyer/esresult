@@ -20,7 +20,7 @@ export namespace Result {
     error: undefined;
     or(value: V): V;
     orUndefined(): V | undefined;
-    orThrow(): void;
+    orThrow(): V;
   }
 
   export interface Error<E, V = never> {
@@ -33,7 +33,7 @@ export namespace Result {
       | never;
     or(value: V): never;
     orUndefined(): never | undefined;
-    orThrow(): void;
+    orThrow(): never;
   }
 }
 

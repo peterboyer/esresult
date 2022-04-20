@@ -56,6 +56,7 @@ describe("value", () => {
 
     const throws = jest.fn(() => $.orThrow());
     expect(throws).not.toThrow();
+    expectType<() => number>($.orThrow);
   });
 
   test("async result", async () => {
@@ -94,6 +95,7 @@ describe("error", () => {
 
     const throws = jest.fn(() => $.orThrow());
     expect(throws).toThrow();
+    expectType<() => never>($.orThrow);
   });
 
   test("async error", async () => {
