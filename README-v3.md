@@ -288,11 +288,11 @@ discriminate between "Ok" and "Error" Results.
 
 
 
-**`Result` is a function**, which produces an "Ok" Result object using the given
-`value` parameter, whereby `Error` is `never`.
+**`Result` is a function that produces an "Ok" Result object**, whereby `Error`
+is `never`.
 
-`Result.error` is a function that produces an "Error" Result object using the
-given `error` parameter, whereby `Value` is `never`.
+**`Result.error` is a function that produces an "Error" Result object**, whereby
+`Value` is `never`.
 
 
 
