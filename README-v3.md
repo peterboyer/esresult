@@ -11,11 +11,28 @@
 
 # Table of Contents
 
-[TOC]
+- [What is esresult?](#what-is-esresult)
+- [Why does it exist?](#why-does-it-exist)
+  - [Using esresult instead!](#using-esresult-instead)
+- [How does it work?](#how-does-it-work)
+- [Comparison to existing libraries](#comparisons)
+- [Installation](#installation)
+- [Basic usage](#basic-usage)
+  - [fn with no errors](#fn-with-no-errors)
+  - [fn with one error](#fn-with-one-error)
+  - [fn with many errors](#fn-with-many-errors)
+  - [fn with details errors](#fn-with-details-errors)
+  - [async fn](#async-fn)
+  - [error chaining](#error-chaining)
+  - [wrap](#wrap)
+  - [try](#try)
+- [License](#license)
+
+
 
 # What is esresult?
 
-`esresult` is a tiny, zero-dependency, TypeScript-focused, result/error utility.
+`esresult` is a tiny, zero-dependency, TypeScript-first, result/error utility.
 
 It helps you easily represent errors as part of your functions' signatures so
 that:
@@ -29,22 +46,24 @@ that:
   or `null`
   ([`String.match`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/match#return_value))
   to indicate an error,
-- you don't need to fallback to `let` just to use a variable assigned from [within a
-  `try/catch` closure](https://stackoverflow.com/a/43090730).
+- you don't need to fallback to `let` just to use a variable assigned from
+  [within a `try/catch` closure](https://stackoverflow.com/a/43090730).
 
 
 
-# Why use esresult?
+# Why does it exist?
 
-You will end up writing lots of functions.
+You will be writing a lot of functions.
 
 ```ts
-function fn() {}
+function fn() {
+    ...
+}
 ```
 
 
 
-Your functions will probably return some kind of value.
+Your functions will often need to return some kind of value.
 
 ```ts
 function fn(): string {
@@ -54,52 +73,61 @@ function fn(): string {
 
 
 
-Some functions will probably need to report errors.
+And will probably need to report errors of some kind.
 
 ```ts
 function fn(): string {
-    if (condition) throw new Error("NotFound");
+    if (condition)
+        throw new Error("NotFound");
     return value;
 }
 ```
 
 
 
-Most of the time you will have many different types of errors, so you make subclasses of `Error`.
+You will probably have many different types of errors, so you make subclasses of
+`Error`.
 
 ```ts
 class NotFoundError extends Error {}
 class DatabaseQueryFailedError extends Error {}
 
 function fn(): string {
-    if (condition) throw new NotFoundError();
-    if (condition) throw new DatabaseQueryFailedError();
+    if (condition)
+        throw new NotFoundError();
+    if (condition)
+        throw new DatabaseQueryFailedError();
     return value;
 }
 ```
 
 
 
-Traditionally, you will use `throw` to report errors. It would be best to document this behaviour somewhere; unfortunately documentation decays very quickly.
+Traditionally, you will use `throw` to report error; and it would be best to
+document this behaviour somehow.
 
 ```ts
 class NotFoundError extends Error {}
 class DatabaseQueryFailedError extends Error {}
 
 /**
- * @throws NotFoundError if the record can't be found.
- * @throws DatabaseQueryError if there is an error communicating with the database.
+ * @throws NotFoundError: If the record can't be found.
+ * @throws DatabaseQueryError: If there is an error communicating with the database.
+ * @throws FooError: An error we forgot to remove from the documentation many releases ago.
  */
 function fn(): string {
-    if (condition) throw new NotFoundError();
-    if (condition) throw new DatabaseQueryFailedError();
+    if (condition)
+        throw new NotFoundError();
+    if (condition)
+        throw new DatabaseQueryFailedError();
     return value;
 }
 ```
 
 
 
-If the **caller** wants to act conditionally for a particular error, we need to import those error classes too for comparison.
+If the **caller** wants to act conditionally for a particular error we also need
+to import those error classes for comparison.
 
 ```ts
 import { fn, NotFoundError } from "./fn";
@@ -108,14 +136,16 @@ try {
     const value = fn();
 } catch (e) {
     if (e instanceof NotFoundError) {
-       // ... 
+        ...
     }
 }
 ```
 
 
 
-If the `value` returned by `fn()` (from within the `try` block) is needed later, the **caller** needs to use `let` outside of the `try` block and to then later assign to it.
+If the value returned by `fn()` (from within the `try` block) is needed later,
+the **caller** needs to use `let` outside of the `try` block to then assign it
+from within.
 
 ```ts
 import { fn, NotFoundError } from "./fn";
@@ -125,107 +155,194 @@ try {
     value = fn();
 } catch (e) {
     if (e instanceof NotFoundError) {
-       // ... 
+        ...
     }
 }
 
 console.log(value);
-// string | undefined
+            ^ // string | undefined
 ```
 
 
 
 This "simple" function:
 
-- ended up to **too much boilerplate code** to express errors,
-- the **caller** needed to be hyper-aware of possible error behaviour so that it may safely handle these error-cases,
-- the **caller** needed to litter their code with try/catch blocks that juggle the returned value around,
-- the **caller** needed to perform additional imports just to compare error instances,
-- AND, if the function decides to add or remove error behaviour, type-safety and **static analysis will not notice**.
+- needs **too much boilerplate code** to express errors,
+- needs the **caller** to read the docs to learn of possible error behaviour so
+  that it may safely handle these error-cases,
+- needs the **caller** to litter their code with let & try/catch blocks to
+  properly scope returned values,
+- needs the **caller** to perform additional imports of error subclasses just to
+  compare error instances,
+- AND, if the function adds (or removes) error behaviour, **static analysis will
+  not notice**.
 
 
 
-What if we could instead reduce this something smaller and more human-friendly -- using ?
+## Using `esresult` instead!
+
+What if we could instead reduce all this into something smaller and more
+human-friendly with `esresult`?
+
+- No error subclasses needed, and are now part of the function's signature.
 
 ```ts
 import Result from "esresult";
 
 function fn(): Result<string, "NotFound" | "DatabaseQueryFailed"> {
-    if (condition) return Result.error("NotFound");
-    if (condition) return Result.error("DatabaseQueryFailed");
+    if (condition)
+        return Result.error("NotFound");
+    if (condition)
+        return Result.error("DatabaseQueryFailed");
     return Result(value);
 }
 ```
+
+- No need to import anything else but the `fn` itself.
+- No complications with let + try/catch to handle a particular error.
+- All error types can be seen via intellisense/autocompletion.
+- Ergonomically handle error cases and default value behaviours.
 
 ```ts
 import { fn } from "./fn"
 
 const $value = fn();
+      ^ // ? The Result object that may be of Value or Error.
+
 if ($value.error?.type === "NotFound") {
-    // ...
+                  ^ // "NotFound" | "DatabaseQueryFailed" | undefined
 }
 
 const value = $value.orUndefined();
-// string | undefined
+      ^ // string | undefined
 ```
 
 
 
-And if the function doesn't have any known error cases yet, you can access the successful value directly.
+And if the function doesn't have any known error cases yet (as part of its
+signature), you can access the successful value directly, without needing to
+check `error` (it will always be `undefined`).
 
 ```ts
 import Result from "esresult";
 
 function fn(): Result<string> {
-    return Result("hello");
+    return Result(value);
 }
 
 const [value] = fn();
-// string ("hello")
+       ^ // string
 ```
 
 
 
-And once you add (or remove) an error case, TypeScript will let you know.
+And once you add (or remove) an error case, TypeScript will be able let you
+know.
 
 ```ts
 import Result from "esresult";
 
-function fn(): Result<string, "HavingABadDay" | "HavingAHorribleDay"> {
-    if (isBadDay) return Result.error("HavingABadDay");
-    return Result("hello");
+function fn(): Result<string, "Invalid"> {
+    if (isInvalid)
+        return Result.error("Invalid");
+    return Result(value);
 }
 
 const [value] = fn();
-   // ^ possible ResultError is not iterable (you need to handle the error)
+      ^ // ? Possible ResultError is not iterable! (You must handle the error case first.)
 ```
 
 
 
-And all possible errors are part of the function's return signature, and can be auto-completed!
+# How does it work?
 
-```ts
-const $value = fn();
-
-$value.error?.type
-		   // ^ "HavingABadDay" | "HavingAHorribleDay" | undefined
-```
+`esresult` default exports `Result`, which is both a Type and a Function, as
+explained below.
 
 
 
-# Comparison
+**`Result` is a type generic** that accepts `Value` and  `Error` type parameters
+to create a [discriminable
+union](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#discriminated-unions)
+of:
 
-How does this compare to other error handling libraries?
+- An "Ok" Result, which will **always** have a **`undefined`** `.error`
+  property; and
+- An "Error" Result, which will **always** have a **non-`undefined`** `.error`
+  property.
+- An "Error" Result **does not have a `.value` property**, therefore an "Ok"
+  Result **must be narrowed/discriminated first**!
 
-- [vs `neverthrow`](#vs-neverthrow)
-- [vs `node-verror`](#vs-node-verror)
-- [vs `@badrap/result`](#vs-badrap-result)
-- [vs `type-safe-errors`](#vs-type-safe-errors)
-- [vs `space-monad`](#vs-space-monad)
-- [vs `typescript-monads`](#vs-typescript-monads)
-- [vs `monads`](#vs-monads)
-- [vs `ts-pattern`](#vs-ts-pattern)
-- [vs `boxed`](#vs-boxed)
+
+
+This means that checking for the **truthiness** of `.error` will easily
+discriminate between "Ok" and "Error" Results.
+
+- If `never` is given for `Result`'s `Value` parameter, only a union of "Error"
+  is produced.
+- Vice versa, if `never` is given for `Result`'s `Error` parameter, only a union
+  of "Value" is produced.
+
+
+
+**`Result` is a function**, which produces an "Ok" Result object using the given
+`value` parameter, whereby `Error` is `never`.
+
+`Result.error` is a function that produces an "Error" Result object using the
+given `error` parameter, whereby `Value` is `never`.
+
+
+
+"Error" Result's can also contain `.meta` data about the error (e.g. current
+iteration index/value, failed input string, etc.).
+
+- An Error's `meta` type can be defined via a tuple: `Result<never, ["MyError",
+  { foo: string }]>`
+- An "Error" Result object can be instantiated similarly:
+  `Result.error(["MyError", { foo: "bar" }]);`
+
+
+
+`esresult` works with simple objects as returned by `Result` and `Result.error`,
+of which follow a simple prototype chain:
+
+- "Ok" Result object has, `Result.prototype` -> `Object.prototype`
+- "Error" Result object has, `ResultError.prototype` -> `Result.prototype` ->
+  `Object.prototype`
+
+
+
+The `Result.prototype` defines methods such as `or()`, `orUndefined()`, and
+`orThrow()`.
+
+
+
+# Comparisons
+
+How does `esresult` compare to other result/error handling libraries?
+
+- Overall `esresult`:
+  - is mechanically simple to discriminate on a single `.error` property.
+  - supports a simple (and fully typed) error shape mechanism that naturally
+    supports auto-completion.
+  - supports causal chaining out-of-the-box so you don't need to use another
+    library.
+  - relies on simple functions (or, orUndefined, etc) to reduce value-mapping
+    complexity in favour of native TypeScript control flow.
+
+|                                    | esresult            | [neverthrow](https://github.com/supermacro/neverthrow) | [node-verror](https://github.com/joyent/node-verror) | [@badrap/result](https://github.com/badrap/result) | [type-safe-errors](https://github.com/wiktor-obrebski/type-safe-errors) | [space-monad](https://github.com/AlexGalays/space-monad) | [typescript-monads](https://github.com/patrickmichalina/typescript-monads) | [monads](https://github.com/sniptt-official/monads/tree/main/lib/result) | [ts-pattern](https://github.com/gvergnaud/ts-pattern) | [boxed](https://github.com/swan-io/boxed) |
+| ---------------------------------- | ------------------- | ------------------------------------------------------ | ---------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ | ----------------------------------------------------- | ----------------------------------------- |
+| Result discrimination              | **.error**          | .isOk() .isErr()                                       | N/A                                                  | .isOk .isErr                                       | as inferred                                                  | .isOk()  .isResult($)                                    | .isOk() .isErr()                                             | .isOk() .isErr()                                             | as inferred                                           | .isOk() .isErr()                          |
+| Free value access if no error def. | **YES**             | No                                                     | N/A                                                  | No (must always discriminate; for errors too!)     | **YES**                                                      | No                                                       | No                                                           | No                                                           | **YES**                                               | No                                        |
+| Error shapes (type/meta)           | **YES**             | No                                                     | **YES**                                              | No (forces of type `Error`)                        | No (encourages error instances)                              | No                                                       | No                                                           | No                                                           | No                                                    | No                                        |
+| Error causal chaining              | **YES**             | No                                                     | **YES**                                              | No                                                 | No                                                           | No                                                       | No                                                           | No                                                           | No                                                    | No                                        |
+| Error type autocomplete            | **YES**             | No                                                     | No (relies on throwing)                              | No                                                 | **YES** (standard inferred)                                  | No                                                       | No                                                           | No                                                           | **YES** (standard inferred)                           | No                                        |
+| Wrap unsafe functions              | **YES**             | **YES**                                                | N/A                                                  | No                                                 | No                                                           | No                                                       | No                                                           | No                                                           | N/A                                                   | No                                        |
+| Execute one-off unsafe functions   | **YES**             | No                                                     | N/A                                                  | No                                                 | No                                                           | No                                                       | No                                                           | No                                                           | N/A                                                   | No                                        |
+| Async types                        | **YES**             | **YES**                                                | N/A                                                  | No                                                 | No                                                           | No                                                       | No                                                           | No                                                           | N/A                                                   | No                                        |
+| Wrap unsafe async functions        | **YES**             | **YES**                                                | N/A                                                  | No                                                 | No                                                           | No                                                       | No                                                           | No                                                           | N/A                                                   | No                                        |
+| value access                       | **or, orUndefined** | map, mapErr, orElse (not type restricted)              | N/A                                                  | unwrap (could throw if not verbose)                | map, mapErr                                                  | map, orElse                                              | unwrap unwrapOr                                              | unwrap (throws), unwrapOr                                    | N/A                                                   | match (not type restricted)               |
+| orThrow (panic)                    | **YES**             | No                                                     | N/A                                                  | **"**                                              | No                                                           | No                                                       | No                                                           | No                                                           | **YES**, (exhaustive)                                 | No                                        |
 
 
 
@@ -237,24 +354,22 @@ $ npm install esresult
 
 
 
-# Basic Usage
+# Usage
 
-## `Result<Value>`
+## With no errors
 
-Creating and calling a simple function that returns a `string` without no
-defined errors.
+- A simple function that returns a `string` without any defined errors.
 
 ```ts
 import Result from "esresult";
 
 function fn(): Result<string> {
-  return Result("hello");
+  return Result("string");
 }
 ```
 
-### use value directly
-
-- Because the `Result` signature has no defined errors the caller doesn't need to handle anything else.
+- Because the `Result` signature has no defined errors the caller doesn't need
+  to handle anything else.
 
 ```ts
 const [value] = fn();
@@ -262,110 +377,76 @@ const [value] = fn();
 
 
 
-## `Result<Value,Error>`
+## With one error
 
-Creating and calling a simple function returns a `string` with possible, defined
-errors.
-
-```ts
-import Result from "esresult";
-
-function fn(s: string): Result<string, "Empty"> {
-  if (!s) {
-    return Result.error("Empty");
-  }
-  return Result(s);
-}
-```
-
-### use value or a default value (if error)
+- A function that returns a string or a `"NotFound"` error.
 
 ```ts
-const valueOrDefault = fn(_).or("default");
-```
-
-### use value or `undefined` (if error)
-
-```ts
-const valueOrUndefined = fn(_).orUndefined();
-```
-
-### use value after handling error
-
-- You can use the `Result` object directly to handle specific error cases and create [error chains](#error-chains).
-
-```ts
-const $ = fn(_);
-if ($.error) {
-  return Result.error("FnFailed", { cause: $ })
-}
-
-const [value] = $;
-```
-
-
-
-# Result
-
-A `Result` is a generic that produces a union of "Value" and "Error" values that
-are discriminated based on the `.error` value:
-
-- A "Value" will always have `.error === undefined`.
-- A "Error" will always have `.error !== undefined`.
-- A "Error" does not have a `.value` property.
-
-
-
-## fn with no errors
-
-```ts
-// definition
-function fn(): Result<string> {
-  return Result("string");
-}
-```
-
-```ts
-// calling
-const $ = fn();
-const value = $.or("default");
-const value = $.orUndefined();
-
-// Able to easily access value.
-const [value] = $;
-```
-
-
-
-## fn with one error
-
-```ts
-// definition
 function fn(): Result<string, "NotFound"> {
   return Result("string");
   return Result.error("NotFound");
 }
 ```
 
+- The returned `Result` may be an error, as determined by its `.error` property.
+
+
+
+### use value, or a default value on error
+
+- You may provide a default value of matching type to the expected value of the
+  Result.
+
 ```ts
-// calling
+const valueOrDefault = fn().or("default");
+```
+
+
+
+### use value, or `undefined` on error
+
+- Or you may default to `undefined` in the case of an error.
+
+```ts
+const valueOrUndefined = fn().orUndefined();
+```
+
+
+
+### use value, or `throw` on error
+
+- Or you may **crash your program when in an undefined state that should never
+  happen** (e.g. initialisation code).
+  - Don't use `.orThrow` with try/catch blocks as this defeats the purpose of
+    the `Result` object itself.
+
+
+```ts
+const value = fn().orThrow();
+```
+
+
+
+### use value, after handling error
+
+- You can use the `Result` object directly to handle specific error cases and
+  create [error chains](#error-chains).
+
+```ts
 const $ = fn();
-const value = $.or("default");
-const value = $.orUndefined();
+if ($.error)
+  return Result.error("FnFailed", { cause: $ })
 
-// Must handle a possible error before accessing value.
-if ($.error) { return; }
-
-// Able to access value after filtering out possible error.
 const [value] = $;
 ```
 
 
 
-## fn with many errors
+## With many errors
+
+- You can provide a union of error types to define many possible errors.
 
 ```ts
-// definition
 function fn(): Result<string, "NotFound" | "NotAllowed"> {
   return Result("string");
   return Result.error("NotFound");
@@ -374,20 +455,24 @@ function fn(): Result<string, "NotFound" | "NotAllowed"> {
 ```
 
 ```ts
-// calling
 const $ = fn();
 
 if ($.error) {
-  $.error.type // "NotFound" | "NotAllowed"
+  $.error.type
+          ^ // "NotFound" | "NotAllowed"
 }
 ```
 
 
 
-## fn with detailed errors
+## With detailed errors
+
+- You can add typed `meta` information to allowing callers to parse more from
+  your error.
+  - Provide a tuple with the error type and the meta type/shape to use.
+
 
 ```ts
-// definition
 function fn(): Result<
   string,
     | "NotFound"
@@ -398,206 +483,121 @@ function fn(): Result<
   return Result.error("NotFound");
   return Result.error("NotAllowed");
   return Result.error(["QueryFailed", { query: { a: 1, b: 2 } }])
+                      ^ // ? Providing a tuple that matches the definition's shape.
 }
 ```
 
+- To access the `meta` property with the correct type, you will need to
+  discriminate by `.error.type` first.
+
 ```ts
-// calling
 const $ = fn();
 
 if ($.error) {
   if ($.error.type === "QueryFailed") {
-    $.error.meta // { query: Record<string, unknown> }
+    $.error.meta
+            ^ // { query: Record<string, unknown> }
   } else {
-    $.error.meta // undefined
+    $.error.meta
+            ^ // undefined ? Only "QueryFailed" has a meta property definition.
   }
 }
 ```
 
 
 
-## async fn
+## Async
 
-Use `Result.Async` as a shortcut for `Promise<Result>`.
+- Use `Result.Async` as a shortcut for `Promise<Result>`.
 
 ```ts
-// definition
 async function fn(): Result.Async<string, "Error"> {
   return Result("string");
   return Result.error("Error");
 }
 ```
 
+- Results are just ordinary objects that are perfectly compatible with
+  async/await control flows.
+
 ```ts
-// calling
 const $ = await fn();
 const value = $.or("default");
 const value = $.orUndefined();
 
-if ($.error) { /* ... */ return; }
+if ($.error) {
+    return;
+}
+
 const [value] = $;
 ```
 
 
 
-## error chains
+## Chaining errors
 
-
+- Often you need will have a function calling another function that could also
+  fail, upon which the caller will fail also.
+  - You can provide a `cause` property to your returned error that will begin to
+    form an error chain of domain-specific errors.
+  - Error chains are more useful than a traditional stack-traces because they
+    are specific to your program's domain rather than representing an
+    programming error resulting in undefined program behaviour.
 
 ```ts
-function fn(): Result<string, "Failed"> {
-  return Result.error("Failed");
-}
-
 function main(): Result<string, "FooFailed"> {
-  const $foo = fn();
-  if ($foo.error) {
-    return Result.error("FooFailed", { cause: $foo });
-  }
+    const $foo = fn();
+          ^ // ? Returns a Result that may be an error.
+
+    if ($foo.error)
+        return Result.error("FooFailed", { cause: $foo });
+
+    return Result(value);
 }
 ```
 
 
 
-# Other
+## Wrap throwable functions (.fn)
 
-## Result of Async Function
-
-Call your function to receive a `Result` object with which you can check for
-errors before using your value, helping you write safer code with complete
-awareness of all possible (expected) error types without having to refer to
-documentation.
-
-```ts
-// if error, use a default value
-const value = foo("123").or("DefaultValue");
-```
-
-```ts
-// or: if error, use undefined to indicate failure
-const value = foo("123").orUndefined();
-```
-
-```ts
-// or: deal with the Result directly
-const $result = foo("123");
-```
-
-The `Result` object is a union of an "Ok" state and all possible "Error" states
-(as annotated on your function) which can be discriminated upon using the
-`$.error` property (which is always `undefined` for successful operations).
-
-```ts
-if ($result.error) {
-  // if error, return a new error and chain its cause
-  return Result.error("FooFailed", { $cause: $result });
-
-  // or: handle a specific error
-  if ($result.error.type === "EmptyValue") {
-    ...
-  }
-}
-```
-
-Once the `Result` object has been type-narrowed to only an "Ok" state, you can
-safely access it's success value.
-
-```ts
-// value from $.value property
-const value = $result.value;
-```
-
-```ts
-// value by destructuring the $.value property
-const { value } = $result;
-```
-
-```ts
-// value by tuple-destructure (allowing for easy renaming)
-const [myValue] = $result;
-```
-
-You can provide a union of errors to `Result` to annotate many possible error
-states of the function.
-
-```ts
-function bar(): Result<MyType, "ValueInvalid" | "ValueTooBig"> {
-  return Result.error("ValueInvalid");
-  return Result.error("ValueTooBig");
-}
-```
-
-Often you will want to include metadata/details about an error, you can provide
-a error + meta data tuple.
-
-```ts
-function bar(): Result<
-  MyType,
-  | ["ParseError", { line: number, column: number }]
-  | ["FormatError", { conflictId?: string }]
-  | "RandomError"
-> {
-  return Result.error("ParseError", { line: 10, column: 12 });
-  return Result.error("FormatError", { conflictId: "abc123" });
-  return Result.error("RandomError");
-}
-
-const $result = bar();
-if ($result.error?.type === "ParseError") {
-  console.log($result.error.meta) // { line: 10, column: 12 }
-}
-```
-
-Use `Result.fn` to wrap functions that ~~`throw`~~, capturing the thrown `Error`
-within a `Result` object for comfortable error handling.
+- Use `Result.fn` to wrap unsafe functions (including `async` functions) that
+  `throw`.
+  - The return type of the wrapped function is correctly inferred as the `Value`
+    of the Result return signature.
+  - If the function `throw`s, the Error is captured in a `{ thrown: Error }`
+    container.
 
 ```ts
 const parse = Result.fn(JSON.parse);
+      ^ // (text: string, ...) => Result<unknown, Thrown>
 
-const input = "*&!^@#*%$"
-const $result = parse(input);
-// $result.error.type = { thrown: SyntaxError("Unexpected token * ...") }
-
-if ($result.error?.type.thrown instanceof SyntaxError) {
-  return Result.error("InputParseFailed", { $cause: $result, input });
-}
+const $ = parse(...);
+      ^ // Result<unknown, Thrown>
 ```
 
-Use `Result.try` for one-off executions, intended to be a convenient replacement
-for `try-catch` blocks. Equivalent to `Result.fn(() => { ... })()`, note the
-immediate invocation with `()`.
+
+
+## Execute throwable functions (.try)
+
+- A shortcut method for `Result.fn(() => {})()`; offers a simple replacement for
+  a try/catch block.
+  - Accepts a function with no arguments and **immediately invokes it** and
+    forwards its return value (if any) as a Result.
 
 ```ts
-const input = "*&!^@#*%$"
-const $result = Result.try(() => JSON.parse())
+const $ = Result.try(() => {});
+      ^ // Result<void, Thrown>
+
+const $ = Result.try(async () => {});
+      ^ // Result.Async<void, Thrown>
+
+const $ = Result.try(() => JSON.stringify(...));
+      ^ // Result<string, Thrown>
 ```
 
-## About
 
-`esresult` supports:
 
-- **intellisense** of a `Result`'s possible error types.
-- **cause-chaining** to build domain-specific error causal-chains.
-- **built-in data structure for error messages and info** for canonical error
-  descriptions and/or contextual error information (e.g. data of a failing
-  iteration in a loop).
-- **ok result with warnings** for idiomatic handling of partial success cases
-  where a valid value can be returned despite some non-critical errors.
-
-## API
-
-- [View Reference Docs + Examples](https://peterboyer.github.io/esresult/)
-- [Example With and Without `esresult`](./EXAMPLE.md)
-
-## Motivation
-
-Heavily inspired by:
-- [`neverthrow`](https://www.npmjs.com/package/neverthrow)
-  ([npm](https://www.npmjs.com/package/neverthrow),
-  [github](https://github.com/supermacro/neverthrow))
-- Rust's [`Result`](https://doc.rust-lang.org/std/result/enum.Result.html) type.
-
-## License
+# License
 
 Copyright (C) 2022 Peter Boyer
 
