@@ -114,9 +114,9 @@ class NotFoundError extends Error {}
 class DatabaseQueryFailedError extends Error {}
 
 /**
- * @throws NotFoundError: If the record can't be found.
- * @throws DatabaseQueryError: If there is an error communicating with the database.
- * @throws FooError: An error we forgot to remove from the documentation many releases ago.
+ * @throws {NotFoundError} If the record can't be found.
+ * @throws {DatabaseQueryError} If there is an error communicating with the database.
+ * @throws {FooError} An error we forgot to remove from the documentation many releases ago.
  */
 function fn(): string {
     if (condition)
