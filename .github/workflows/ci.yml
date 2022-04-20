@@ -9,19 +9,13 @@ on:
   workflow_dispatch:
     inputs:
       deploy:
-        description: "Deploy? (y/N)"
+        description: "Deploy? (y/sha/N)"
         required: false
 
 jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    env:
-      # ? If "sha" will publish on the "sha" tag.
-      # BUILD_CHANNEL: ""
-      BUILD_CHANNEL: "sha"
-    outputs:
-      BUILD_CHANNEL: ${{ env.BUILD_CHANNEL }}
     steps:
       - uses: actions/checkout@v2
       - uses: bahmutov/npm-install@v1
@@ -35,6 +29,9 @@ jobs:
             "yarn test:ts" \
             "yarn build" \
             "yarn docs"
+
+      - run: |
+          yarn test:uat
 
       - uses: actions/upload-artifact@v2
         with:
@@ -50,14 +47,14 @@ jobs:
     name: Deploy
     needs: build
     runs-on: ubuntu-latest
-    if: ${{ github.event.inputs.deploy == 'y' }}
+    if: ${{ github.event.inputs.deploy == 'y' || github.event.inputs.deploy == 'sha' }}
     concurrency:
       group: deploy
       cancel-in-progress: true
     env:
       # workaround https://github.com/JS-DevTools/npm-publish/issues/15
       INPUT_TOKEN: ""
-      PUBLISH_CHANNEL: ${{ needs.build.outputs.BUILD_CHANNEL == '' && 'latest' || needs.build.outputs.BUILD_CHANNEL }}
+      PUBLISH_CHANNEL: ${{ github.event.inputs.deploy == 'y' && 'latest' || 'sha' }}
     steps:
       - uses: actions/checkout@v2
         with: { fetch-depth: 0 }
@@ -69,10 +66,10 @@ jobs:
           name: dist
           path: dist
 
-      - if: ${{ env.BUILD_CHANNEL == '' }}
+      - if: ${{ env.PUBLISH_CHANNEL == 'latest' }}
         run: oTAG= yarn build:version
 
-      - if: ${{ env.BUILD_CHANNEL == 'sha' }}
+      - if: ${{ env.PUBLISH_CHANNEL == 'sha' }}
         run: oTAG= oSHA= yarn build:version
 
       - run: echo ${{ env.PUBLISH_CHANNEL }}
@@ -93,7 +90,8 @@ jobs:
           name: docs
           path: docs
 
-      - uses: peaceiris/actions-gh-pages@v3
+      - if: ${{ env.PUBLISH_CHANNEL == 'latest' }}
+        uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./docs
