@@ -7,32 +7,35 @@
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
   <a href="https://github.com/peterboyer/esresult/issues">Issues</a>
 </div>
-
+<br/>
 
 # Table of Contents
 
 - [What is esresult?](#what-is-esresult)
-- [Why does it exist?](#why-does-it-exist)
+- [Why does esresult exist?](#why-does-esresult-exist)
   - [Using esresult instead!](#using-esresult-instead)
-- [How does it work?](#how-does-it-work)
+- [How does esresult work?](#how-does-esresult-work)
 - [Comparison to existing libraries](#comparisons)
 - [Installation](#installation)
-- [Basic usage](#basic-usage)
-  - [fn with no errors](#fn-with-no-errors)
-  - [fn with one error](#fn-with-one-error)
-  - [fn with many errors](#fn-with-many-errors)
-  - [fn with details errors](#fn-with-details-errors)
-  - [async fn](#async-fn)
-  - [error chaining](#error-chaining)
-  - [wrap](#wrap)
-  - [try](#try)
+- [Usage](#usage)
+  - [With no errors](#with-no-errors)
+  - [With one error](#with-one-error)
+  - [With many errors](#with-many-errors)
+  - [With detailed errors](#with-detailed-errors)
+  - [Async functions](#async-functions)
+  - [Chaining errors](#chaining-errors)
+  - [Wrap throwable functions (`.fn`)](#wrap-throwable-functions-fn)
+  - [Execute throwable functions (`.try`)](#execute-throwable-functions-try)
+- [Helpers](#helpers)
+  - [JSON](#json)
 - [License](#license)
 
+<br/>
 
+# What is `esresult`?
 
-# What is esresult?
-
-`esresult` is a tiny, zero-dependency, TypeScript-first, result/error utility.
+`esresult` (ECMA-Script Result) is a tiny, zero-dependency, TypeScript-first,
+result/error utility.
 
 It helps you easily represent errors as part of your functions' signatures so
 that:
@@ -49,9 +52,9 @@ that:
 - you don't need to fallback to `let` just to use a variable assigned from
   [within a `try/catch` closure](https://stackoverflow.com/a/43090730).
 
+<br/>
 
-
-# Why does it exist?
+# Why does `esresult` exist?
 
 You will be writing a lot of functions.
 
@@ -177,7 +180,7 @@ This "simple" function:
 - AND, if the function adds (or removes) error behaviour, **static analysis will
   not notice**.
 
-
+<br/>
 
 ## Using `esresult` instead!
 
@@ -252,9 +255,9 @@ const [value] = fn();
       ^ // ? Possible ResultError is not iterable! (You must handle the error case first.)
 ```
 
+<br/>
 
-
-# How does it work?
+# How does `esresult` work?
 
 `esresult` default exports `Result`, which is both a Type and a Function, as
 explained below.
@@ -315,7 +318,7 @@ of which follow a simple prototype chain:
 The `Result.prototype` defines methods such as `or()`, `orUndefined()`, and
 `orThrow()`.
 
-
+<br/>
 
 # Comparisons
 
@@ -343,7 +346,7 @@ How does `esresult` compare to other result/error handling libraries?
 | Wrap unsafe async functions        | **YES**             | **YES**                                                | N/A                                                  | No                                                 | No                                                           | No                                                       | No                                                           | No                                                           | N/A                                                   | No                                        |
 | value access                       | **or, orUndefined** | map, mapErr, orElse (not type restricted)              | N/A                                                  | unwrap (could throw if not verbose)                | map, mapErr                                                  | map, orElse                                              | unwrap unwrapOr                                              | unwrap (throws), unwrapOr                                    | N/A                                                   | match (not type restricted)               |
 | orThrow (panic)                    | **YES**             | No                                                     | N/A                                                  | **"**                                              | No                                                           | No                                                       | No                                                           | No                                                           | **YES**, (exhaustive)                                 | No                                        |
-
+<br/>
 
 
 # Installation
@@ -352,7 +355,7 @@ How does `esresult` compare to other result/error handling libraries?
 $ npm install esresult
 ```
 
-
+<br/>
 
 # Usage
 
@@ -375,7 +378,7 @@ function fn(): Result<string> {
 const [value] = fn();
 ```
 
-
+<br/>
 
 ## With one error
 
@@ -390,9 +393,9 @@ function fn(): Result<string, "NotFound"> {
 
 - The returned `Result` may be an error, as determined by its `.error` property.
 
+<br/>
 
-
-### use value, or a default value on error
+### ... use value, or a default value on error
 
 - You may provide a default value of matching type to the expected value of the
   Result.
@@ -401,9 +404,9 @@ function fn(): Result<string, "NotFound"> {
 const valueOrDefault = fn().or("default");
 ```
 
+<br/>
 
-
-### use value, or `undefined` on error
+### ... use value, or `undefined` on error
 
 - Or you may default to `undefined` in the case of an error.
 
@@ -411,9 +414,9 @@ const valueOrDefault = fn().or("default");
 const valueOrUndefined = fn().orUndefined();
 ```
 
+<br/>
 
-
-### use value, or `throw` on error
+### ... use value, or `throw` on error
 
 - Or you may **crash your program when in an undefined state that should never
   happen** (e.g. initialisation code).
@@ -425,9 +428,9 @@ const valueOrUndefined = fn().orUndefined();
 const value = fn().orThrow();
 ```
 
+<br/>
 
-
-### use value, after handling error
+### ... use value, after handling error
 
 - You can use the `Result` object directly to handle specific error cases and
   create [error chains](#error-chains).
@@ -440,7 +443,7 @@ if ($.error)
 const [value] = $;
 ```
 
-
+<br/>
 
 ## With many errors
 
@@ -463,7 +466,7 @@ if ($.error) {
 }
 ```
 
-
+<br/>
 
 ## With detailed errors
 
@@ -504,9 +507,9 @@ if ($.error) {
 }
 ```
 
+<br/>
 
-
-## Async
+## Async functions
 
 - Use `Result.Async` as a shortcut for `Promise<Result>`.
 
@@ -532,7 +535,7 @@ if ($.error) {
 const [value] = $;
 ```
 
-
+<br/>
 
 ## Chaining errors
 
@@ -556,7 +559,7 @@ function main(): Result<string, "FooFailed"> {
 }
 ```
 
-
+<br/>
 
 ## Wrap throwable functions (.fn)
 
@@ -575,7 +578,7 @@ const $ = parse(...);
       ^ // Result<unknown, Thrown>
 ```
 
-
+<br/>
 
 ## Execute throwable functions (.try)
 
@@ -595,19 +598,33 @@ const $ = Result.try(() => JSON.stringify(...));
       ^ // Result<string, Thrown>
 ```
 
+<br/>
 
+# Helpers
+
+## JSON
+
+- The built-in JSON `.parse` and `.stringify` methods are frequently used, so
+  `esresult` offers a pre-wrapped drop-in `JSON` object replacement.
+  - You can achieve the same result with `Result.fn(JSON.parse)` etc.
+
+```ts
+import { JSON } from "esresult";
+
+const $ = JSON.parse(...);
+      ^ // Result<unknown, Thrown>
+
+const $ = JSON.stringify(...);
+      ^ // Result<string, Thrown>
+```
+
+<br/>
 
 # License
 
 Copyright (C) 2022 Peter Boyer
 
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-this file except in compliance with the License. You may obtain a copy of the
-License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software distributed
-under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-CONDITIONS OF ANY KIND, either express or implied. See the License for the
-specific language governing permissions and limitations under the License.
+esresult is licensed under the [MIT License](./LICENSE), a short and simple
+permissive license with conditions only requiring preservation of copyright and
+license notices. Licensed works, modifications, and larger works may be
+distributed under different terms and without source code.
