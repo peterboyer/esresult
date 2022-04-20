@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 
-if [[ ! -d dist ]]; then
-  ./scripts/build.sh
-fi
+./scripts/build.sh
 
 cleanup() {
   rm -rf node_modules/esresult
