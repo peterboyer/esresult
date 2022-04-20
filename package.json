@@ -1,7 +1,7 @@
 {
   "name": "esresult",
   "version": "3.0.0",
-  "description": "Result monad with useful error handling features.",
+  "description": "A tiny, TypeScript-first, result/error handling utility.",
   "private": false,
   "repository": "github:peterboyer/esresult",
   "author": "Peter Boyer <https://github.com/peterboyer>",
