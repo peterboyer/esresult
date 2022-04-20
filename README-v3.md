@@ -269,22 +269,22 @@ to create a [discriminable
 union](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#discriminated-unions)
 of:
 
-- An "Ok" Result, which will **always** have a **`undefined`** `.error`
-  property; and
-- An "Error" Result, which will **always** have a **non-`undefined`** `.error`
-  property.
-- An "Error" Result **does not have a `.value` property**, therefore an "Ok"
-  Result **must be narrowed/discriminated first**!
+- An "Ok" Result,
+  - which will **always** have a **`undefined`** `.error` property,
+- An "Error" Result,
+  - which will **always** have a **non-`undefined`** `.error` property,
+  - and **does not have a `.value` property**, therefore an "Ok" Result **must
+  be narrowed/discriminated first**.
 
 
 
 This means that checking for the **truthiness** of `.error` will easily
 discriminate between "Ok" and "Error" Results.
 
-- If `never` is given for `Result`'s `Value` parameter, only a union of "Error"
-  is produced.
-- Vice versa, if `never` is given for `Result`'s `Error` parameter, only a union
-  of "Value" is produced.
+- If **`never`** is given for `Result`'s `Value` parameter, only a union of
+  "Error" is produced.
+- Vice versa, if **`never`** is given for `Result`'s `Error` parameter, only a
+  union of "Value" is produced.
 
 
 
