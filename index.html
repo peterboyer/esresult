@@ -37,6 +37,7 @@
 <li><a href="#json">JSON</a></li>
 </ul>
 </li>
+<li><a href="#as-global-definition">As global definition</a></li>
 <li><a href="#license">License</a></li>
 </ul>
 <br/>
@@ -594,6 +595,30 @@ forwards its return value (if any) as a Result.</li>
 </li>
 </ul>
 <pre><code class="language-ts"><span class="hl-4">import</span><span class="hl-1"> { </span><span class="hl-5">JSON</span><span class="hl-1"> } </span><span class="hl-4">from</span><span class="hl-1"> </span><span class="hl-6">&quot;esresult&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-0">const</span><span class="hl-1"> </span><span class="hl-8">$</span><span class="hl-1"> = </span><span class="hl-3">JSON</span><span class="hl-1">.</span><span class="hl-2">parse</span><span class="hl-1">(...);</span><br/><span class="hl-1">      ^ </span><span class="hl-7">// Result&lt;unknown, Thrown&gt;</span><br/><br/><span class="hl-0">const</span><span class="hl-1"> </span><span class="hl-8">$</span><span class="hl-1"> = </span><span class="hl-3">JSON</span><span class="hl-1">.</span><span class="hl-2">stringify</span><span class="hl-1">(...);</span><br/><span class="hl-1">      ^ </span><span class="hl-7">// Result&lt;string, Thrown&gt;</span>
+</code></pre>
+<br/>
+
+
+<a href="#as-global-definition" id="as-global-definition" style="color: inherit; text-decoration: none;">
+  <h1>As global definition</h1>
+</a>
+<p>You can top-level import <code>Result</code> as a global type and variable, making <code>Result</code>
+feel as if it were a standard language feature, similar to <code>Promise</code> and <code>Date</code>.
+This is particularly useful if you don&#39;t want to have to <code>import</code> the <code>Result</code>
+across all your files.</p>
+
+<a href="#import-quotesresultglobalquot" id="import-quotesresultglobalquot" style="color: inherit; text-decoration: none;">
+  <h2><code>import &quot;esresult/global&quot;</code></h2>
+</a>
+<p>Simply add <code>import &quot;esresult/global&quot;</code> to the top of your project&#39;s entrypoint.</p>
+<ul>
+<li>It should be your first <code>import</code> statement, before all other imports and
+application code.</li>
+<li>This declares global TypeScript typings and adds <code>Result</code> to <code>globalThis</code>.</li>
+</ul>
+<pre><code class="language-diff"><span class="hl-1">// index.ts (entrypoint)</span><br/><br/><span class="hl-9">+ import &quot;esresult/global&quot;;</span><br/><br/><span class="hl-1">// your code ...</span>
+</code></pre>
+<pre><code class="language-ts"><span class="hl-7">// fn.ts</span><br/><br/><span class="hl-0">function</span><span class="hl-1"> </span><span class="hl-2">fn</span><span class="hl-1">(): </span><span class="hl-3">Result</span><span class="hl-1">&lt;</span><span class="hl-3">number</span><span class="hl-1">, </span><span class="hl-6">&quot;Error&quot;</span><span class="hl-1">&gt; {</span><br/><span class="hl-1">               ^ </span><span class="hl-7">// Can now use Result without needing to `import` it.</span><br/><span class="hl-1">}</span>
 </code></pre>
 <br/>
 
