@@ -28,6 +28,7 @@
   - [Execute throwable functions (`.try`)](#execute-throwable-functions-try)
 - [Helpers](#helpers)
   - [JSON](#json)
+- [As global definition](#as-global-definition)
 - [License](#license)
 
 <br/>
@@ -616,6 +617,39 @@ const $ = JSON.parse(...);
 
 const $ = JSON.stringify(...);
       ^ // Result<string, Thrown>
+```
+
+<br/>
+
+# As global definition
+
+You can top-level import `Result` as a global type and variable, making `Result`
+feel as if it were a standard language feature, similar to `Promise` and `Date`.
+This is particularly useful if you don't want to have to `import` the `Result`
+across all your files.
+
+## `import "esresult/global"`
+
+Simply add `import "esresult/global"` to the top of your project's entrypoint.
+
+- It should be your first `import` statement, before all other imports and
+  application code.
+- This declares global TypeScript typings and adds `Result` to `globalThis`.
+
+```diff
+// index.ts (entrypoint)
+
++ import "esresult/global";
+
+// your code ...
+```
+
+```ts
+// fn.ts
+
+function fn(): Result<number, "Error"> {
+               ^ // Can now use Result without needing to `import` it.
+}
 ```
 
 <br/>
