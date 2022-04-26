@@ -51,6 +51,24 @@ describe("base", () => {
       expectType<{ type: unknown; meta: unknown }>($.error);
       expectNotType<undefined>($.error.meta);
     }
+    {
+      const fn = ($: Result.ErrorAny): unknown => {
+        return $.error.type;
+      };
+      const $ = Result.error("MyError") as Result<
+        string,
+        "MyError" | ["MyMetaError", { foo: string }]
+      >;
+      // TODO: Solve why `$.error?.type === "MyError"` TS doesn't narrow Error.
+      if ($.error?.type === "MyError") {
+        // @ts-expect-error Solve TODO.
+        fn($);
+      }
+      // Workaround, needs to discriminate on error property only, then by type.
+      if ($.error && $.error.type === "MyError") {
+        fn($);
+      }
+    }
   });
 });
 
