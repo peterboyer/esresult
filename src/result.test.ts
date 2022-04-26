@@ -48,7 +48,8 @@ describe("base", () => {
       };
 
       const $ = fn();
-      expectType<{ type: unknown; meta: undefined }>($.error);
+      expectType<{ type: unknown; meta: unknown }>($.error);
+      expectNotType<undefined>($.error.meta);
     }
   });
 });

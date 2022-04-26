@@ -36,7 +36,9 @@ export namespace Result {
     orUndefined(): never | undefined;
     orThrow(): never;
   }
-  export type ErrorAny = Error<unknown>;
+  export type ErrorAny = Omit<Error<unknown>, "error"> & {
+    error: { type: unknown; meta: unknown; cause: unknown };
+  };
 }
 
 ////////////////////////////////////////////////////////////////////////////////
