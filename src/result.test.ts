@@ -28,6 +28,28 @@ describe("base", () => {
       const value = $.value;
       expectType<string>(value);
     }
+
+    expectType<Result.ValueAny>(Result("something"));
+    expectType<Result.ValueAny>(Result(new Date()));
+    expectType<Result.ErrorAny>(Result.error("something"));
+    expectType<Result.ErrorAny>(Result.error(new Error()));
+
+    {
+      const fn = (): Result.ValueAny => {
+        return Result(undefined);
+      };
+
+      const [value] = fn();
+      expectType<unknown>(value);
+    }
+    {
+      const fn = (): Result.ErrorAny => {
+        return Result.error("MyError");
+      };
+
+      const $ = fn();
+      expectType<{ type: unknown; meta: undefined }>($.error);
+    }
   });
 });
 

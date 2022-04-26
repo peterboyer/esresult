@@ -22,6 +22,7 @@ export namespace Result {
     orUndefined(): V | undefined;
     orThrow(): V;
   }
+  export type ValueAny = Value<unknown>;
 
   export interface Error<E, V = never> {
     error:
@@ -35,6 +36,7 @@ export namespace Result {
     orUndefined(): never | undefined;
     orThrow(): never;
   }
+  export type ErrorAny = Error<unknown>;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
