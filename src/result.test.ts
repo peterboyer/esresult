@@ -69,6 +69,18 @@ describe("base", () => {
         fn($);
       }
     }
+    {
+      interface Foo {
+        a: number;
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const fn = (): Result<Foo, "XA" | ["XB", { x: string }]> => {
+        if (Math.random() === 1) return Result.error("XA");
+        if (Math.random() === 1) return Result.error(["XB", { x: "foo" }]);
+        return Result({ a: 1 });
+      };
+    }
   });
 });
 
