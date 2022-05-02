@@ -29,6 +29,13 @@ describe("base", () => {
       expectType<string>(value);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expectType<Result.Any>([Result("abc"), Result.error(123)][0]!);
+    expectType<Result.AsyncAny>(
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      new Promise(() => [Result("abc"), Result.error(123)][0]!)
+    );
+
     expectType<Result.ValueAny>(Result("something"));
     expectType<Result.ValueAny>(Result(new Date()));
     expectType<Result.ErrorAny>(Result.error("something"));

@@ -11,9 +11,9 @@ export type Result<V = void, E = never> =
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Result {
-  export type Any = Result<unknown, string>;
+  export type Any = Result<unknown, unknown>;
   export type Async<V = void, E = never> = Promise<Result<V, E>>;
-  export type AsyncAny = Async<unknown, string>;
+  export type AsyncAny = Async<unknown, unknown>;
 
   export interface Value<V> extends BareTuple<[value: V]> {
     value: V | never;
@@ -85,7 +85,7 @@ type ResultErrorTuple<
 type ResultErrorOptions = { cause: unknown };
 
 function ResultError<
-  ERROR extends string | object | ResultErrorTuple<_TYPE>,
+  ERROR extends string | number | boolean | object | ResultErrorTuple<_TYPE>,
   _TYPE extends string | object // force error string into literal for generic
 >(error: ERROR, options?: ResultErrorOptions): Result<never, ERROR> {
   const result = Object.create(Result.prototype);
