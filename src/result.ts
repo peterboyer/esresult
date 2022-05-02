@@ -5,22 +5,24 @@ type BareTuple<T> = Omit<
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// Box an unknown error instead of ruining the error signature of the Result.
-export type Thrown = { thrown: unknown };
-
-////////////////////////////////////////////////////////////////////////////////
-
 export type Result<V = void, E = never> =
   | (V extends never ? never : Result.Value<V>)
   | (E extends never ? never : Result.Error<E, V>);
 
-// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Result {
   export type Any = Result<unknown, unknown>;
-  export type OrThrown<V = void> = Result<V, Thrown>;
+  export type OrThrown<V = void> = Result<V, Result.Error.ThrownType>;
+
   export type Async<V = void, E = never> = Promise<Result<V, E>>;
-  export type AsyncAny = Async<unknown, unknown>;
-  export type AsyncOrThrown<V = void> = Async<V, Thrown>;
+  export namespace Async {
+    export type Any = Async<unknown, unknown>;
+    export type OrThrown<V = void> = Async<V, Result.Error.ThrownType>;
+  }
+
+  /** @deprecated Use Async.Any instead. */
+  export type AsyncAny = Async.Any;
+  /** @deprecated Use Async.OrThrown instead. */
+  export type AsyncOrThrown<V = void> = Async.OrThrown<V>;
 
   export interface Value<V> extends BareTuple<[value: V]> {
     value: V | never;
@@ -29,7 +31,12 @@ export namespace Result {
     orUndefined(): V | undefined;
     orThrow(): V;
   }
-  export type ValueAny = Value<unknown>;
+  export namespace Value {
+    export type Any = Value<unknown>;
+  }
+
+  /** @deprecated Use Value.Any instead. */
+  export type ValueAny = Value.Any;
 
   export interface Error<E, V = never> {
     error:
@@ -43,10 +50,18 @@ export namespace Result {
     orUndefined(): never | undefined;
     orThrow(): never;
   }
-  export type ErrorAny = Omit<Error<unknown>, "error"> & {
-    error: { type: unknown; meta: unknown; cause: unknown };
-  };
-  export type ErrorThrown<V = never> = Error<Thrown, V>;
+  export namespace Error {
+    export type Any = Omit<Error<unknown>, "error"> & {
+      error: { type: unknown; meta: unknown; cause: unknown };
+    };
+    export type Thrown<V = never> = Error<Result.Error.ThrownType, V>;
+    export type ThrownType = { thrown: unknown };
+  }
+
+  /** @deprecated Use Error.Any instead. */
+  export type ErrorAny = Error.Any;
+  /** @deprecated Use Error.Thrown instead. */
+  export type ErrorThrown<V = never> = Error.Thrown<V>;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -114,6 +129,14 @@ Result.error = ResultError;
 
 ////////////////////////////////////////////////////////////////////////////////
 
+function ResultErrorThrown<V = never>(thrown: unknown): Result.Error.Thrown<V> {
+  return Result.error({ thrown });
+}
+
+ResultError.thrown = ResultErrorThrown;
+
+////////////////////////////////////////////////////////////////////////////////
+
 // https://stackoverflow.com/a/61626123
 type IfAny<T, Y, N> = 0 extends 1 & T ? Y : N;
 type IsAny<T> = IfAny<T, true, false>;
@@ -121,11 +144,11 @@ type IsAny<T> = IfAny<T, true, false>;
 ////////////////////////////////////////////////////////////////////////////////
 
 type Wrap<T> = IsAny<T> extends true
-  ? Result<unknown, Thrown>
+  ? Result.OrThrown<unknown>
   : // eslint-disable-next-line @typescript-eslint/no-explicit-any
   T extends Promise<any>
-  ? Result.Async<IsAny<Awaited<T>> extends true ? unknown : Awaited<T>, Thrown>
-  : Result<T, Thrown>;
+  ? Result.Async.OrThrown<IsAny<Awaited<T>> extends true ? unknown : Awaited<T>>
+  : Result.OrThrown<T>;
 
 Result.fn = function fn<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -139,13 +162,13 @@ Result.fn = function fn<
         // @ts-expect-error Too complex.
         return valuePromise
           .then((value) => Result(value))
-          .catch((thrown) => Result.error({ thrown }));
+          .catch((thrown) => Result.error.thrown(thrown));
       }
       // @ts-expect-error Too complex.
       return Result(value);
     } catch (thrown) {
       // @ts-expect-error Too complex.
-      return Result.error({ thrown });
+      return Result.error.thrown(thrown);
     }
   };
   return wrapped;

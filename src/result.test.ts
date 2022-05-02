@@ -1,7 +1,4 @@
-import Result, { type Thrown } from "./result";
-
-////////////////////////////////////////////////////////////////////////////////
-
+import Result from "./result";
 import { expectNotType, expectType } from "tsd";
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -31,27 +28,27 @@ describe("base", () => {
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expectType<Result.Any>([Result("abc"), Result.error(123)][0]!);
-    expectType<Result.AsyncAny>(
+    expectType<Result.Async.Any>(
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       new Promise(() => [Result("abc"), Result.error(123)][0]!)
     );
 
-    expectType<Result.ValueAny>(Result("something"));
-    expectType<Result.ValueAny>(Result(new Date()));
-    expectType<Result.ErrorAny>(Result.error("something"));
-    expectType<Result.ErrorAny>(Result.error(new Error()));
+    expectType<Result.Value.Any>(Result("something"));
+    expectType<Result.Value.Any>(Result(new Date()));
+    expectType<Result.Error.Any>(Result.error("something"));
+    expectType<Result.Error.Any>(Result.error(new Error()));
 
     expectType<Result.OrThrown>(Result.try(() => undefined));
     expectType<Result.OrThrown<string>>(Result.try(() => "abc"));
-    expectType<Result.AsyncOrThrown>(
+    expectType<Result.Async.OrThrown>(
       new Promise(() => Result.try(() => undefined))
     );
-    expectType<Result.AsyncOrThrown<string>>(
+    expectType<Result.Async.OrThrown<string>>(
       new Promise(() => Result.try(() => "abc"))
     );
 
     {
-      const fn = (): Result.ValueAny => {
+      const fn = (): Result.Value.Any => {
         return Result(undefined);
       };
 
@@ -59,7 +56,7 @@ describe("base", () => {
       expectType<unknown>(value);
     }
     {
-      const fn = (): Result.ErrorAny => {
+      const fn = (): Result.Error.Any => {
         return Result.error("MyError");
       };
 
@@ -68,7 +65,7 @@ describe("base", () => {
       expectNotType<undefined>($.error.meta);
     }
     {
-      const fn = ($: Result.ErrorAny): unknown => {
+      const fn = ($: Result.Error.Any): unknown => {
         return $.error.type;
       };
       const $ = Result.error("MyError") as Result<
@@ -242,6 +239,22 @@ describe("error", () => {
 
     expectType<{ a: string }>($.error.meta);
   });
+
+  test("via thrown", () => {
+    const $ = Result.error.thrown(new TypeError("Foo is expected."));
+    expectType<Result.Error.Thrown>($);
+
+    expect($).toMatchObject({
+      error: {
+        type: {
+          thrown: {
+            message: "Foo is expected.",
+          },
+        },
+      },
+    });
+    expect($.error.type.thrown).toBeInstanceOf(TypeError);
+  });
 });
 
 describe("fn", () => {
@@ -269,7 +282,7 @@ describe("fn", () => {
 
   test("async value", async () => {
     const $$ = asyncFn("{}");
-    expectType<Result.Async<unknown, Thrown>>($$);
+    expectType<Result.Async.OrThrown<unknown>>($$);
 
     const $ = await $$;
     expect($).toMatchObject({ value: {}, error: undefined });
@@ -281,7 +294,7 @@ describe("fn", () => {
 
   test("async error", async () => {
     const $$ = asyncFn("invalid");
-    expectType<Result.Async<unknown, Thrown>>($$);
+    expectType<Result.Async.OrThrown<unknown>>($$);
 
     const $ = await $$;
     expect($.error?.type.thrown).toBeInstanceOf(SyntaxError);
@@ -296,16 +309,16 @@ describe("try", () => {
   test("sync", () => {
     const $ = Result.try(() => "value");
     expect($).toMatchObject({ value: "value", error: undefined });
-    expectType<Result<string, Thrown>>($);
+    expectType<Result.OrThrown<string>>($);
   });
 
   test("async", async () => {
     const $$ = Result.try(async () => "value");
-    expectType<Result.Async<string, Thrown>>($$);
+    expectType<Result.Async.OrThrown<string>>($$);
 
     const $ = await $$;
     expect($).toMatchObject({ value: "value", error: undefined });
-    expectType<Result<string, Thrown>>($);
+    expectType<Result.OrThrown<string>>($);
   });
 });
 

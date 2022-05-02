@@ -1,9 +1,5 @@
-import { expectType } from "tsd";
-
-////////////////////////////////////////////////////////////////////////////////
-
 import * as JSON from "./json";
-import { type Thrown } from "./result";
+import { expectType } from "tsd";
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -28,7 +24,7 @@ describe("parse", () => {
     expect($.error?.type.thrown).toBeInstanceOf(SyntaxError);
 
     if ($.error) {
-      expectType<Thrown>($.error.type);
+      expectType<Result.Error.ThrownType>($.error.type);
       return;
     }
   });
@@ -52,7 +48,7 @@ describe("stringify", () => {
   test("correct error value", () => {
     const $ = JSON.stringify("input");
     if ($.error) {
-      expectType<Thrown>($.error.type);
+      expectType<Result.Error.ThrownType>($.error.type);
       return;
     }
   });

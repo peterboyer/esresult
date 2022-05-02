@@ -1,8 +1,5 @@
+import Result, { JSON } from "esresult";
 import { expectType } from "tsd";
-
-////////////////////////////////////////////////////////////////////////////////
-
-import Result, { JSON, type Thrown } from "esresult";
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -68,7 +65,7 @@ describe("example", () => {
     expect($.error?.type.thrown).toBeInstanceOf(Error);
 
     if ($.error) {
-      expectType<Thrown>($.error.type);
+      expectType<Result.Error.ThrownType>($.error.type);
       expectType<undefined>($.error.meta);
     }
   });
@@ -79,7 +76,7 @@ describe("example", () => {
     expect($.error?.type.thrown).toBeInstanceOf(Error);
 
     if ($.error) {
-      expectType<Thrown>($.error.type);
+      expectType<Result.Error.ThrownType>($.error.type);
       expectType<undefined>($.error.meta);
     }
   });
