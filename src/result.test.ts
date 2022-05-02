@@ -41,6 +41,15 @@ describe("base", () => {
     expectType<Result.ErrorAny>(Result.error("something"));
     expectType<Result.ErrorAny>(Result.error(new Error()));
 
+    expectType<Result.OrThrown>(Result.try(() => undefined));
+    expectType<Result.OrThrown<string>>(Result.try(() => "abc"));
+    expectType<Result.AsyncOrThrown>(
+      new Promise(() => Result.try(() => undefined))
+    );
+    expectType<Result.AsyncOrThrown<string>>(
+      new Promise(() => Result.try(() => "abc"))
+    );
+
     {
       const fn = (): Result.ValueAny => {
         return Result(undefined);

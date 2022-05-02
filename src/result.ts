@@ -5,6 +5,11 @@ type BareTuple<T> = Omit<
 
 ////////////////////////////////////////////////////////////////////////////////
 
+// Box an unknown error instead of ruining the error signature of the Result.
+export type Thrown = { thrown: unknown };
+
+////////////////////////////////////////////////////////////////////////////////
+
 export type Result<V = void, E = never> =
   | (V extends never ? never : Result.Value<V>)
   | (E extends never ? never : Result.Error<E, V>);
@@ -12,8 +17,10 @@ export type Result<V = void, E = never> =
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Result {
   export type Any = Result<unknown, unknown>;
+  export type OrThrown<V = void> = Result<V, Thrown>;
   export type Async<V = void, E = never> = Promise<Result<V, E>>;
   export type AsyncAny = Async<unknown, unknown>;
+  export type AsyncOrThrown<V = void> = Async<V, Thrown>;
 
   export interface Value<V> extends BareTuple<[value: V]> {
     value: V | never;
@@ -39,6 +46,7 @@ export namespace Result {
   export type ErrorAny = Omit<Error<unknown>, "error"> & {
     error: { type: unknown; meta: unknown; cause: unknown };
   };
+  export type ErrorThrown<V = never> = Error<Thrown, V>;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -111,9 +119,6 @@ type IfAny<T, Y, N> = 0 extends 1 & T ? Y : N;
 type IsAny<T> = IfAny<T, true, false>;
 
 ////////////////////////////////////////////////////////////////////////////////
-
-// Box the unknown error instead of ruining the error signature of the Result.
-export type Thrown = { thrown: unknown };
 
 type Wrap<T> = IsAny<T> extends true
   ? Result<unknown, Thrown>
