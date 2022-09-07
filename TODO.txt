@@ -1,0 +1,13 @@
+- Add Result.InferValue.
+- Add Result.InferError.
+- Fix Result.Error<"FOO"> !== Result.Error<["FOO"]> -> Should be equivalent.
+- Fix Result.error("FOO") !== Result.error(["FOO"]) -> Should be equivalent.
+
+type Result_InferValue<RESULT extends Result.Any | Result.Async.Any> =
+  ReturnType<
+    RESULT extends Result.Async.Any
+      ? Awaited<RESULT>["orThrow"]
+      : RESULT extends Result.Any
+      ? RESULT["orThrow"]
+      : never
+  >;

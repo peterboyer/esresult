@@ -100,7 +100,7 @@ Result.prototype.orThrow = function orThrow(this: Result.Any) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-type ResultErrorTuple<
+export type ResultErrorTuple<
   TYPE extends string | object = string | object,
   META extends Record<string, unknown> = Record<string, unknown>
 > = [type: TYPE, meta: META];
