@@ -1,187 +1,83 @@
-type BareTuple<T> = Omit<
-  T,
-  Exclude<keyof Array<unknown>, typeof Symbol.iterator>
->;
+type Primitive = undefined | null | boolean | number | string | symbol;
 
-////////////////////////////////////////////////////////////////////////////////
+/**
+ * Use unknown instead of any.
+ * @link https://stackoverflow.com/a/61626123
+ */
+export type Strict<T> = 0 extends 1 & T ? unknown : T;
 
-export type Result<V = void, E = never> =
-  | (V extends never ? never : Result.Value<V>)
-  | (E extends never ? never : Result.Error<E, V>);
+/**
+ * Wrap any value as an object.
+ */
+export type Box<T> = { value: T };
+
+export namespace Box {
+	export type InferValue<T> = T extends { value: infer R } ? R : never;
+}
+
+/**
+ * Represent an output with a success and a failure variant.
+ */
+export type Result<T, E = true> =
+	| { error: E }
+	| ({ error?: never } & (T extends Primitive ? Box<T> : T));
 
 export namespace Result {
-  export type Any = Result<unknown, unknown>;
-  export type OrThrown<V = void> = Result<V, Result.Error.ThrownType>;
-
-  export type Async<V = void, E = never> = Promise<Result<V, E>>;
-  export namespace Async {
-    export type Any = Async<unknown, unknown>;
-    export type OrThrown<V = void> = Async<V, Result.Error.ThrownType>;
-  }
-
-  /** @deprecated Use Async.Any instead. */
-  export type AsyncAny = Async.Any;
-  /** @deprecated Use Async.OrThrown instead. */
-  export type AsyncOrThrown<V = void> = Async.OrThrown<V>;
-
-  export interface Value<V> extends BareTuple<[value: V]> {
-    value: V | never;
-    error: undefined;
-    or(value: V): V;
-    orUndefined(): V | undefined;
-    orThrow(): V;
-  }
-  export namespace Value {
-    export type Any = Value<unknown>;
-  }
-
-  /** @deprecated Use Value.Any instead. */
-  export type ValueAny = Value.Any;
-
-  export interface Error<E, V = never> {
-    error:
-      | {
-          type: E extends [type: unknown, meta?: unknown] ? E["0"] : E;
-          meta: E extends [type: unknown, meta: unknown] ? E["1"] : undefined;
-          cause: unknown;
-        }
-      | never;
-    or(value: V): never;
-    orUndefined(): never | undefined;
-    orThrow(): never;
-  }
-  export namespace Error {
-    export type Any = Omit<Error<unknown>, "error"> & {
-      error: { type: unknown; meta: unknown; cause: unknown };
-    };
-    export type Thrown<V = never> = Error<Result.Error.ThrownType, V>;
-    export type ThrownType = { thrown: unknown };
-  }
-
-  /** @deprecated Use Error.Any instead. */
-  export type ErrorAny = Error.Any;
-  /** @deprecated Use Error.Thrown instead. */
-  export type ErrorThrown<V = never> = Error.Thrown<V>;
+	export type InferValue<T> = T extends { error?: never } & infer R ? R : never;
+	export type InferError<T> = T extends { error: infer R } ? R : never;
 }
 
-////////////////////////////////////////////////////////////////////////////////
+/**
+ * Represent an output with a resolved and a pending variant.
+ */
+export type Future<T> =
+	| { pending: true }
+	| ({ pending?: never } & (T extends Primitive ? Box<T> : T));
 
-export function Result<VALUE>(value: VALUE): Result<VALUE, never> {
-  const result = Object.create(Result.prototype);
-  return Object.assign(result, { value, error: undefined }, [value]);
+export namespace Future {
+	export type InferValue<T> = T extends { pending?: never } & infer R
+		? R
+		: never;
 }
 
-// allows array/iterator-based destructuring
-Result.prototype[Symbol.iterator] = Array.prototype[Symbol.iterator];
+export const orbox = <T>(value: T): T extends Primitive ? Box<T> : T =>
+	// @ts-expect-error Trust.
+	value === undefined ||
+	value === null ||
+	typeof value === "boolean" ||
+	typeof value === "number" ||
+	typeof value === "string" ||
+	typeof value === "symbol"
+		? { value }
+		: value;
 
-// inform the array iterator that it has 1 item, not undefined
-Result.prototype.length = 1;
-
-Result.prototype.or = function or(this: Result.Any, defaultValue: unknown) {
-  if (this.error) {
-    return defaultValue;
-  }
-  return this.value;
+export const safe = <T>(
+	fn: (...args: unknown[]) => T
+): 0 extends 1 & T
+	? Result<Box<unknown>>
+	: T extends Promise<unknown>
+	? Promise<Result<Box<Strict<T>>>>
+	: Result<Box<Strict<T>>> => {
+	let value: unknown;
+	try {
+		value = fn();
+	} catch (error: unknown) {
+		// @ts-expect-error Trust.
+		return { error };
+	}
+	if (
+		value &&
+		typeof value === "object" &&
+		"then" in value &&
+		typeof (value as Promise<unknown>).then === "function" &&
+		"catch" in value &&
+		typeof (value as Promise<unknown>).catch === "function"
+	) {
+		// @ts-expect-error Trust.
+		return (value as Promise<unknown>)
+			.then((value: unknown) => ({ value }))
+			.catch((error: unknown) => ({ error }));
+	}
+	// @ts-expect-error Trust.
+	return { value };
 };
-
-Result.prototype.orUndefined = function orUndefined(this: Result.Any) {
-  if (this.error) {
-    return undefined;
-  }
-  return this.value;
-};
-
-Result.prototype.orThrow = function orThrow(this: Result.Any) {
-  if (this.error) {
-    throw new Error(`${this.error.type}`);
-  }
-  return this.value;
-};
-
-////////////////////////////////////////////////////////////////////////////////
-
-type ResultErrorTuple<
-  TYPE extends string | object = string | object,
-  META extends Record<string, unknown> = Record<string, unknown>
-> = [type: TYPE, meta: META];
-
-type ResultErrorOptions = { cause: unknown };
-
-function ResultError<
-  ERROR extends string | number | boolean | object | ResultErrorTuple<_TYPE>,
-  _TYPE extends string | object // force error string into literal for generic
->(error: ERROR, options?: ResultErrorOptions): Result<never, ERROR> {
-  const result = Object.create(Result.prototype);
-  if (Array.isArray(error)) {
-    const [type, meta] = error;
-    return Object.assign(result, {
-      error: { type, meta, cause: options?.cause },
-    });
-  }
-  return Object.assign(result, {
-    error: { type: error, meta: undefined, cause: options?.cause },
-  });
-}
-
-ResultError.prototype = Object.create(Result.prototype);
-
-Result.error = ResultError;
-
-////////////////////////////////////////////////////////////////////////////////
-
-function ResultErrorThrown<V = never>(thrown: unknown): Result.Error.Thrown<V> {
-  return Result.error({ thrown });
-}
-
-ResultError.thrown = ResultErrorThrown;
-
-////////////////////////////////////////////////////////////////////////////////
-
-// https://stackoverflow.com/a/61626123
-type IfAny<T, Y, N> = 0 extends 1 & T ? Y : N;
-type IsAny<T> = IfAny<T, true, false>;
-
-////////////////////////////////////////////////////////////////////////////////
-
-type Wrap<T> = IsAny<T> extends true
-  ? Result.OrThrown<unknown>
-  : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  T extends Promise<any>
-  ? Result.Async.OrThrown<IsAny<Awaited<T>> extends true ? unknown : Awaited<T>>
-  : Result.OrThrown<T>;
-
-Result.fn = function fn<
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  F extends (...args: any[]) => any
->(fn: F) {
-  const wrapped = (...args: Parameters<F>): Wrap<ReturnType<F>> => {
-    try {
-      const value = fn(...args);
-      const valuePromise = value as Promise<unknown>;
-      if (typeof valuePromise === "object" && "then" in valuePromise) {
-        // @ts-expect-error Too complex.
-        return valuePromise
-          .then((value) => Result(value))
-          .catch((thrown) => Result.error.thrown(thrown));
-      }
-      // @ts-expect-error Too complex.
-      return Result(value);
-    } catch (thrown) {
-      // @ts-expect-error Too complex.
-      return Result.error.thrown(thrown);
-    }
-  };
-  return wrapped;
-};
-
-////////////////////////////////////////////////////////////////////////////////
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-Result.try = function from<F extends (...args: never[]) => any>(fn: F) {
-  const wrapped = Result.fn(fn);
-  return wrapped(...([] as Parameters<F>));
-};
-
-////////////////////////////////////////////////////////////////////////////////
-
-export default Result;
