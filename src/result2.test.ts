@@ -1,11 +1,11 @@
 import { expectType } from "tsd";
-import { Result, orbox, safe } from "./result";
+import { Box, Result, Future, safe } from "./result";
 
 describe("Result", () => {
 	it("should correctly type-narrow with a primitive", async () => {
 		type ID = string;
 
-		async function getNextId(): Promise<Result<ID, "DatabaseError">> {
+		async function getNextId(): Promise<Result<Box<ID>, "DatabaseError">> {
 			if (Math.random()) {
 				return { error: "DatabaseError" };
 			}
@@ -52,29 +52,74 @@ describe("Result", () => {
 	});
 });
 
+describe("Future", () => {
+	it("should correctly type-narrow with a primitive", async () => {
+		type ID = string;
+
+		function useNextId(): Future<Result<Box<ID>, "DatabaseError">> {
+			if (Math.random()) {
+				return { pending: true };
+			}
+			if (Math.random()) {
+				return { error: "DatabaseError" };
+			}
+			const nextId: ID = "abc";
+			return { value: nextId };
+		}
+
+		const nextId = useNextId();
+
+		if (nextId.pending) {
+			expectType<true>(nextId.pending);
+			return;
+		}
+
+		if (nextId.error) {
+			expectType<"DatabaseError">(nextId.error);
+			return;
+		}
+
+		expectType<string>(nextId.value);
+	});
+
+	it("should correctly type-narrow with an object", async () => {
+		type User = {
+			id: string;
+			name: string;
+		};
+
+		function useUser(options: {
+			id: string;
+		}): Future<Result<User, "DatabaseError" | "OptionsIdInvalid">> {
+			if (!options.id) {
+				return { error: "OptionsIdInvalid" };
+			}
+			const user: User = { id: options.id, name: "Foo McBar" };
+			return user;
+		}
+
+		const user = useUser({ id: "abc" });
+
+		if (user.pending) {
+			expectType<true>(user.pending);
+			return;
+		}
+
+		if (user.error) {
+			expectType<"DatabaseError" | "OptionsIdInvalid">(user.error);
+			return;
+		}
+
+		expectType<User>(user);
+		expectType<string>(user.id);
+		expectType<string>(user.name);
+	});
+});
+
 const sym = Symbol();
 const obj = {};
 const arr = [] as unknown[];
 const fn = (): undefined => undefined;
-
-describe("orbox", () => {
-	test.each([
-		[undefined, { value: undefined }],
-		[null, { value: null }],
-		[true, { value: true }],
-		[false, { value: false }],
-		[0, { value: 0 }],
-		[123, { value: 123 }],
-		["", { value: "" }],
-		["abc", { value: "abc" }],
-		[sym, { value: sym }],
-		[obj, obj],
-		[arr, arr],
-		[fn, fn],
-	])("%s -> %s", (value, expected) => {
-		expect(orbox(value)).toEqual(expected);
-	});
-});
 
 describe("safe", () => {
 	test.each([

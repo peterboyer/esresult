@@ -1,10 +1,10 @@
-type Primitive = undefined | null | boolean | number | string | symbol;
-
 /**
  * Use unknown instead of any.
  * @link https://stackoverflow.com/a/61626123
  */
 export type Strict<T> = 0 extends 1 & T ? unknown : T;
+
+export type Obj = Record<string | number | symbol, unknown>;
 
 /**
  * Wrap any value as an object.
@@ -18,9 +18,9 @@ export namespace Box {
 /**
  * Represent an output with a success and a failure variant.
  */
-export type Result<T, E = true> =
+export type Result<T extends Obj, E = true> =
 	| { error: E }
-	| ({ error?: never } & (T extends Primitive ? Box<T> : T));
+	| ({ error?: never } & T);
 
 export namespace Result {
 	export type InferValue<T> = T extends { error?: never } & infer R ? R : never;
@@ -30,26 +30,15 @@ export namespace Result {
 /**
  * Represent an output with a resolved and a pending variant.
  */
-export type Future<T> =
+export type Future<T extends Obj> =
 	| { pending: true }
-	| ({ pending?: never } & (T extends Primitive ? Box<T> : T));
+	| ({ pending?: never } & T);
 
 export namespace Future {
 	export type InferValue<T> = T extends { pending?: never } & infer R
 		? R
 		: never;
 }
-
-export const orbox = <T>(value: T): T extends Primitive ? Box<T> : T =>
-	// @ts-expect-error Trust.
-	value === undefined ||
-	value === null ||
-	typeof value === "boolean" ||
-	typeof value === "number" ||
-	typeof value === "string" ||
-	typeof value === "symbol"
-		? { value }
-		: value;
 
 export const safe = <T>(
 	fn: (...args: unknown[]) => T
