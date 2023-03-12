@@ -2,13 +2,29 @@
  * Creates a union of combined, mutually exclusive variants.
  * @example
  * ```
- * Enum<{ A: string } | { B: string } | { C: string }>
- * -> | { A: string, B?: never, C?: never }
- *    | { A?: never, B: string, C?: never }
- *    | { A?: never, B?: never, C: string }
+ * Enum<{ A: { value: string } } | { B: { value: number } }>
+ * -> | { A: { value: string }, B?: never }
+ *    | { A?: never, B: { value: number } }
  * ```
  */
-export type Enum<T> = Either<Intersect<T>>;
+export type Enum<T extends Enum.Variant> = Either<Intersect<T>>;
+
+export namespace Enum {
+	export type Variant<TYPE extends string = string, VALUE = unknown> = Record<
+		TYPE,
+		VALUE extends never ? never : { value: VALUE }
+	>;
+
+	export type Infer<
+		T extends Partial<Variant>,
+		K extends keyof T
+	> = T extends Record<K, infer R> ? R : never;
+
+	export type InferValue<
+		T extends Partial<Variant>,
+		K extends keyof T
+	> = T extends Record<K, { value: infer R }> ? R : never;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
