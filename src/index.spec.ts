@@ -1,5 +1,6 @@
 import { expectType } from "tsd";
 import type { Enum, Result, Future } from "./index";
+import { safely, match } from "./fns";
 
 describe("Enum", () => {
 	it("should support an enum of one", () => {
@@ -64,6 +65,20 @@ describe("Enum", () => {
 
 		it("should give undefined of undefined variant value", () => {
 			expectType<undefined>(undefined as Enum.Infer<Future<string>, "Pending">);
+		});
+	});
+
+	describe("Root", () => {
+		it("should revert root enum variants", () => {
+			expectType<{ Ok: number; Err: "Error" }>(
+				{} as Enum.Root<Result<number, "Error">>
+			);
+		});
+
+		it("should revert root enum variants without values", () => {
+			expectType<{ Ready: string; Pending: undefined }>(
+				{} as Enum.Root<Future<string>>
+			);
 		});
 	});
 });
@@ -141,5 +156,75 @@ describe("Future", () => {
 		} else {
 			expectType<string>(result.Ready.value);
 		}
+	});
+});
+
+describe("safely", () => {
+	it("should handle value", () => {
+		const result = safely(() => "foo");
+		expectType<Result<Enum.Generic<string>, unknown>>(result);
+		expect(result).toMatchObject({ Ok: { value: "foo" } });
+	});
+
+	it("should handle thrown error", () => {
+		const result = safely(() => {
+			throw new TypeError("bar");
+		});
+		expectType<Result<Enum.Generic<never>, unknown>>(result);
+		expect(result).toMatchObject({ Err: { value: { message: "bar" } } });
+	});
+
+	it("should handle promise value", async () => {
+		const result = await safely(() => (async () => "foo")());
+		expectType<Result<Enum.Generic<string>, unknown>>(result);
+		expect(result).toMatchObject({
+			Ok: { value: "foo" },
+		});
+	});
+
+	it("should handle promise value", async () => {
+		const result = await safely(() =>
+			(async () => {
+				throw new TypeError("bar");
+			})()
+		);
+		expectType<Result<Enum.Generic<never>, unknown>>(result);
+		expect(result).toMatchObject({ Err: { value: { message: "bar" } } });
+	});
+});
+
+describe("match", () => {
+	it("should handle handle and fallback matches", () => {
+		const getValue = (
+			value: Enum<{
+				A: string;
+				B: number;
+				C: undefined;
+				D: never;
+				E: unknown;
+			}>
+		) =>
+			match(value)(
+				{
+					A: (a) => a,
+					B: (b) => b,
+				},
+				(value) => {
+					if (value.E) {
+						return undefined;
+					} else {
+						return value.C;
+					}
+				}
+			);
+		{
+			const value = getValue({ A: { value: "foo" } });
+			expectType<string | number | undefined | true>(value);
+		}
+
+		expect(getValue({ A: { value: "foo" } })).toBe("foo");
+		expect(getValue({ B: { value: 123 } })).toBe(123);
+		expect(getValue({ C: true })).toBe(true);
+		expect(getValue({ E: { value: null } })).toBeUndefined();
 	});
 });

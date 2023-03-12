@@ -1,12 +1,25 @@
 import type { Enum } from "../enum";
 import type { Result } from "../result";
 
-export async function safely<T>(
+export function safely<T>(
 	fn: () => T
-): Promise<Result<Enum.Generic<Awaited<T>>, unknown>> {
+): T extends Promise<unknown>
+	? Promise<Result<Enum.Generic<Awaited<T>>, unknown>>
+	: Result<Enum.Generic<Awaited<T>>> {
 	try {
-		return { Ok: { value: await fn() } };
+		const value = fn();
+		if (value && typeof value === "object" && "then" in value) {
+			return (
+				value
+					// @ts-expect-error Lazy.
+					.then((value: unknown) => ({ Ok: { value } }))
+					.catch((value: unknown) => ({ Err: { value } }))
+			);
+		}
+		// @ts-expect-error Lazy.
+		return { Ok: { value } };
 	} catch (error) {
+		// @ts-expect-error Lazy.
 		return { Err: { value: error } };
 	}
 }

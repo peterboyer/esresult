@@ -41,8 +41,23 @@ export type Enum<T extends object> = {
 }[keyof T];
 
 export namespace Enum {
+	/**
+	 * Helper to coerce unknown generic values to use a { value: ... } box.
+	 * Refer to [[Enum]] type for example of usage with a generic function.
+	 */
 	export type Generic<T> = { $: T };
 
+	/**
+	 * Helper to infer an enum's variant's value.
+	 *
+	 * @example
+	 * ```
+	 * Infer<Enum<{ A: string; B: undefined }>, "A">
+	 * -> string
+	 * Infer<Enum<{ A: string; B: undefined }>, "B">
+	 * -> undefined
+	 * ```
+	 */
 	export type Infer<T extends object, K extends keyof T> = T extends Record<
 		K,
 		infer R
@@ -52,36 +67,49 @@ export namespace Enum {
 			: undefined
 		: never;
 
-	export type Map<T extends object> = Intersect<
-		T extends unknown ? Pick<T, RequiredKeys<T>> : never
+	export type Root<T extends object> = UnboxValues<
+		Intersect<T extends unknown ? Pick<T, RequiredKeys<T>> : never>
 	>;
+
+	/**
+	 * Get unboxed value if boxed, otherwise, it's undefined.
+	 *
+	 * @example
+	 * ```
+	 * UnboxValues<{ A: { value: string }; B: true }>
+	 * -> { A: string, B: undefined }
+	 * ```
+	 */
+	type UnboxValues<T> = {
+		[K in keyof T]: T[K] extends { value: infer R } ? R : undefined;
+	};
+
+	/**
+	 * Create an intersection of all union members.
+	 *
+	 * @example
+	 * ```
+	 * Intersect<{ A: string } | { B: string } | { C: string }>
+	 * -> { A: string, B: string, C: string }
+	 * ```
+	 */
+	type Intersect<T extends object> = (
+		T extends unknown ? (t: T) => void : never
+	) extends (t: infer R) => void
+		? R
+		: never;
+
+	/**
+	 * Get all "required" keys of object.
+	 *
+	 * @example
+	 * ```
+	 * RequiredKeys<{ A: string; B: string; C?: string }>
+	 * -> "A" | "B"
+	 * ```
+	 */
+	type RequiredKeys<T extends object> = {
+		// eslint-disable-next-line @typescript-eslint/ban-types
+		[K in keyof T]-?: {} extends Pick<T, K> ? never : K;
+	}[keyof T];
 }
-
-/**
- * Create an intersection of all union members.
- *
- * @example
- * ```
- * Intersect<{ A: string } | { B: string } | { C: string }>
- * -> { A: string, B: string, C: string }
- * ```
- */
-type Intersect<T extends object> = (
-	T extends unknown ? (t: T) => void : never
-) extends (t: infer R) => void
-	? R
-	: never;
-
-/**
- * Get all "required" keys of object.
- *
- * @example
- * ```
- * RequiredKeys<{ A: string; B: string; C?: string }>
- * -> "A" | "B"
- * ```
- */
-type RequiredKeys<T extends object> = {
-	// eslint-disable-next-line @typescript-eslint/ban-types
-	[K in keyof T]-?: {} extends Pick<T, K> ? never : K;
-}[keyof T];
