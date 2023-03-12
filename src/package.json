@@ -1,5 +1,5 @@
 {
 	"name": "esresult",
 	"version": "4.0.0",
-	"types": "./index.d.ts"
+	"types": "./index.ts"
 }
