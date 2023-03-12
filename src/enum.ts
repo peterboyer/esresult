@@ -1,67 +1,30 @@
+// prettier-ignore
 /**
- * Creates a union of combined, mutually exclusive variants.
+ * Creates a union of mutually exclusive, discriminable variants.
+ * Variants with a value are wrapped in a truthy { value: ... } box.
+ * Variants without a value (`undefined`) must also be truthy as `true`.
+ *
  * @example
  * ```
- * Enum<{ A: { value: string } } | { B: { value: number } }>
- * -> | { A: { value: string }, B?: never }
- *    | { A?: never, B: { value: number } }
+ * Enum<{ A: string; B: number; C: undefined }>
+ * -> | { A: { value: string }; B?: never; C?: never; }
+ *    | { A?: never; B: { value: number }; C?: never; }
+ *    | { A?: never; B?: never; C: true; }
  * ```
  */
-export type Enum<T extends Enum.Variant> = Either<Intersect<T>>;
+export type Enum<T extends Record<string, unknown>> = {
+	[K in keyof T]:
+		& { [M in K]: T[K] extends undefined ? true : { value: T[K] } }
+		& { [M in Exclude<keyof T, K>]?: never };
+}[keyof T];
 
 export namespace Enum {
-	export type Variant<TYPE extends string = string, VALUE = unknown> = Record<
-		TYPE,
-		VALUE extends never ? never : { value: VALUE }
-	>;
-
-	export type Infer<
-		T extends Partial<Variant>,
-		K extends keyof T
-	> = T extends Record<K, infer R> ? R : never;
-
-	export type InferValue<
-		T extends Partial<Variant>,
-		K extends keyof T
-	> = T extends Record<K, { value: infer R }> ? R : never;
+	export type Infer<T extends object, K extends keyof T> = T extends Record<
+		K,
+		infer R
+	>
+		? R extends { value: infer V }
+			? V
+			: undefined
+		: never;
 }
-
-////////////////////////////////////////////////////////////////////////////////
-
-/**
- * Create an intersection of all union members.
- * @example
- * ```
- * Intersect<{ A: string } | { B: string } | { C: string }>
- * -> { A: string, B: string, C: string }
- * ```
- */
-type Intersect<T> = (T extends unknown ? (t: T) => void : never) extends (
-	t: infer R
-) => void
-	? R
-	: never;
-
-/**
- * Create an object of T keys with never values.
- * @example
- * ```
- * Never<{ A: string, B: string, C: string }>
- * -> { A: never, B: never, C: never }
- * ```
- */
-type Never<T extends object> = { [K in keyof T]: never };
-
-/**
- * Create a union of objects from T where each key must be the only one defined.
- * @example
- * ```
- * Either<{ A: string, B: string, C: string }>
- * -> | { A: string, B?: never, C?: never }
- *    | { A?: never, B: string, C?: never }
- *    | { A?: never, B?: never, C: string }
- * ```
- */
-type Either<T> = {
-	[K in keyof T]: Required<Pick<T, K>> & Partial<Never<Omit<T, K>>>;
-}[keyof T];
