@@ -1,7 +1,7 @@
 import type { Enum } from "../enum";
 
 export const match =
-	<T extends object>(target: T) =>
+	<T extends Record<string, { value: unknown } | true>>(target: T) =>
 	<
 		E extends Enum.Root<T>,
 		M extends Partial<{
@@ -25,11 +25,12 @@ export const match =
 		if (!variant) {
 			throw new TypeError(`match(target=${target}) is invalid enum`);
 		}
-		if (Object.keys(mapper).includes(variant)) {
+		if (variant in mapper) {
 			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 			const mapperVariant = mapper[variant as keyof typeof mapper]!;
-			const variantValue = target[variant as keyof typeof target];
-			if ("value" in variantValue) {
+			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+			const variantValue = target[variant as keyof typeof target]!;
+			if (typeof variantValue === "object") {
 				// @ts-expect-error Lazy.
 				return mapperVariant(variantValue.value);
 			}

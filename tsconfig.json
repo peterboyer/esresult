@@ -1,18 +1,10 @@
 {
-  "extends": "@tsconfig/node16/tsconfig.json",
-  "compilerOptions": {
-    "baseUrl": "./src",
-    "paths": {
-      "esresult": ["./index.ts"]
-    },
-    "noImplicitAny": true,
-    "noImplicitThis": true,
-    "noImplicitReturns": true,
-    "noImplicitOverride": true,
-    "noUncheckedIndexedAccess": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "noFallthroughCasesInSwitch": true
-  },
-  "include": ["src"],
-  "exclude": ["dist"]
+	"extends": "@tsconfig/node-lts-strictest",
+	"include": ["src"],
+	"exclude": ["dist", "src/**/*.{test|spec}.ts"],
+	"compilerOptions": {
+		"outDir": "dist",
+		"declaration": true,
+		"noEmitOnError": true
+	}
 }

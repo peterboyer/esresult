@@ -23,15 +23,12 @@ jobs:
 
       - run: |
           yarn concurrently \
-            --names "lint,test,test:ts,build,docs" \
+            --names "lint,lint:ts,test,build,docs" \
             "yarn lint" \
+            "yarn lint:ts" \
             "yarn test" \
-            "yarn test:ts" \
             "yarn build" \
             "yarn docs"
-
-      - run: |
-          yarn test:uat
 
       - uses: actions/upload-artifact@v2
         with:

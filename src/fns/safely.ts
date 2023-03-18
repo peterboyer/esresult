@@ -10,8 +10,8 @@ export function safely<T>(
 		const value = fn();
 		if (value && typeof value === "object" && "then" in value) {
 			return (
+				// @ts-expect-error Lazy.
 				value
-					// @ts-expect-error Lazy.
 					.then((value: unknown) => ({ Ok: { value } }))
 					.catch((value: unknown) => ({ Err: { value } }))
 			);

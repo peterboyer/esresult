@@ -43,7 +43,7 @@ export type Enum<T extends object> = {
 export namespace Enum {
 	/**
 	 * Helper to coerce unknown generic values to use a { value: ... } box.
-	 * Refer to [[Enum]] type for example of usage with a generic function.
+	 * Refer to the Enum<T> type for example of usage with a generic function.
 	 */
 	export type Generic<T> = { $: T };
 
