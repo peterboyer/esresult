@@ -5,16 +5,27 @@
 	"author": "Peter Boyer <https://github.com/peterboyer>",
 	"repository": "github:peterboyer/esresult",
 	"description": "0kb, Rust-like Enums for TypeScript.",
-	"main": "src/index.ts",
-	"types": "src/index.ts",
 	"scripts": {
 		"prepare": "husky install",
 		"dev": "yarn test && yarn lint && yarn lint:ts",
 		"test": "./scripts/test.sh",
+		"test:e2e": "./scripts/test-e2e.sh",
 		"lint": "./scripts/lint.sh",
 		"lint:ts": "./scripts/lint-ts.sh",
 		"build": "./scripts/build.sh",
 		"docs": "./scripts/docs.sh"
+	},
+	"types": "src/enum.d.ts",
+	"exports": {
+		".": {
+			"types": "src/enum.d.ts"
+		},
+		"./result": {
+			"types": "src/result.d.ts"
+		},
+		"./future": {
+			"types": "src/future.d.ts"
+		}
 	},
 	"devDependencies": {
 		"@commitlint/cli": "^17.4.4",

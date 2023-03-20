@@ -1,0 +1,10 @@
+{
+	"private": true,
+	"name": "esenum-test",
+	"devDependencies": {
+		"@tsconfig/recommended": "^1.0.2",
+		"esenum": "file:../dist",
+		"tsd": "^0.28.0",
+		"typescript": "^5.0.2"
+	}
+}

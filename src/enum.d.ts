@@ -31,7 +31,7 @@
  * }
  * ```
  */
-export type Enum<T extends object> = {
+type Enum<T extends object> = {
 	[K in keyof T]:
 		& { [M in K]: T[K] extends Enum.Generic<unknown>
 			? { value: T[K]["$"] }
@@ -40,7 +40,7 @@ export type Enum<T extends object> = {
 		& { [M in Exclude<keyof T, K>]?: never };
 }[keyof T];
 
-export namespace Enum {
+namespace Enum {
 	/**
 	 * Helper to coerce unknown generic values to use a { value: ... } box.
 	 * Refer to the Enum<T> type for example of usage with a generic function.
@@ -113,3 +113,5 @@ export namespace Enum {
 		[K in keyof T]-?: {} extends Pick<T, K> ? never : K;
 	}[keyof T];
 }
+
+export type { Enum };
