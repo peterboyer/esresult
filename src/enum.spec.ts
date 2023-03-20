@@ -1,5 +1,5 @@
 import { expectType } from "tsd";
-import type { Enum } from "./enum.d";
+import type { Enum } from "./enum";
 
 describe("Enum", () => {
 	it("should support an enum of one", () => {

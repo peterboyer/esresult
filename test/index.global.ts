@@ -1,4 +1,4 @@
-import "esenum";
+import "esenum/global";
 
 type MyEnum = Enum<{
 	A: undefined;

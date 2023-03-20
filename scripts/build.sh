@@ -1,12 +1,21 @@
 #!/usr/bin/env bash
 
-rm -rf dist \
-	&& tsc \
-	&& cp package.json LICENSE README.md dist \
-	&& dot-json dist/package.json main index.js \
-	&& dot-json dist/package.json types index.d.ts \
-	&& dot-json dist/package.json scripts --delete \
-	&& dot-json dist/package.json devDependencies --delete
+rm -rf dist
+tsc
+cp src/*.d.ts dist
+(
+	cd src;
+	for f in *[^.spec][^.d].ts; do
+		name=${f//.ts/};
+		cp $f ../dist/global.$name.types.d.ts;
+	done
+)
+find ./dist -name '*.types.d.ts' -exec sed -i'' 's/^export type .*//g' {} \;
+find ./dist -name '*.types.d.ts' -exec sed -i'' 's/^import type .*//g' {} \;
+cp package.json LICENSE README.md dist
+dot-json dist/package.json scripts --delete
+dot-json dist/package.json devDependencies --delete
+sed -i'' 's/"src/"./g' dist/package.json
 
 function headsha() {
 	echo $(git rev-parse HEAD)
