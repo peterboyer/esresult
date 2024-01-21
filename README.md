@@ -1,3 +1,15 @@
+> [!WARNING]
+> Hi there! I have decided to formally deprecate this project and publicly
+> archive the repository in favour of my newer and more universal package,
+> [`unenum`](https://github.com/peterboyer/unenum). `esresult`'s `Result` API
+> relies on building non-portable prototypal objects, whereas `unenum` offers a
+> portable [`Result`](https://github.com/peterboyer/unenum#result) type and
+> (optional) runtime API that uses plain objects typed with [discriminated
+> unions](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#discriminated-unions).
+> I highly recommend using `unenum` instead of `esresult` and strongly
+> encourage migrating your codebase to use `unenum`'s equivalent `Result` type
+> and helpers. See [`MIGRATION.md`](./MIGRATION.md) for more details. Thanks!
+
 <p align="center">
   <img src="https://user-images.githubusercontent.com/8391902/147464722-786db152-e32d-429a-955a-d1e12960b8fc.png" alt="esresult" />
 </p>
@@ -45,7 +57,7 @@ that:
   annotations](https://jsdoc.app/tags-throws.html),
 - you don't need to write [`Error` subclasses
   boilerplate](https://javascript.info/custom-errors),
-- you don't need to return arbitary values like `-1`
+- you don't need to return arbitrary values like `-1`
   ([`Array.findIndex`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/findIndex#return_value))
   or `null`
   ([`String.match`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/match#return_value))
@@ -61,33 +73,26 @@ You will be writing a lot of functions.
 
 ```ts
 function fn() {
-    ...
+  ...
 }
 ```
-
-
 
 Your functions will often need to return some kind of value.
 
 ```ts
 function fn(): string {
-    return value;
+  return value;
 }
 ```
-
-
 
 And will probably need to report errors of some kind.
 
 ```ts
 function fn(): string {
-    if (condition)
-        throw new Error("NotFound");
-    return value;
+  if (condition) throw new Error("NotFound");
+  return value;
 }
 ```
-
-
 
 You will probably have many different types of errors, so you make subclasses of
 `Error`.
@@ -97,15 +102,11 @@ class NotFoundError extends Error {}
 class DatabaseQueryFailedError extends Error {}
 
 function fn(): string {
-    if (condition)
-        throw new NotFoundError();
-    if (condition)
-        throw new DatabaseQueryFailedError();
-    return value;
+  if (condition) throw new NotFoundError();
+  if (condition) throw new DatabaseQueryFailedError();
+  return value;
 }
 ```
-
-
 
 Traditionally, you will use `throw` to report error; and it would be best to
 document this behaviour somehow.
@@ -120,15 +121,11 @@ class DatabaseQueryFailedError extends Error {}
  * @throws {FooError} An error we forgot to remove from the documentation many releases ago.
  */
 function fn(): string {
-    if (condition)
-        throw new NotFoundError();
-    if (condition)
-        throw new DatabaseQueryFailedError();
-    return value;
+  if (condition) throw new NotFoundError();
+  if (condition) throw new DatabaseQueryFailedError();
+  return value;
 }
 ```
-
-
 
 If the **caller** wants to act conditionally for a particular error we also need
 to import those error classes for comparison.
@@ -145,8 +142,6 @@ try {
 }
 ```
 
-
-
 If the value returned by `fn()` (from within the `try` block) is needed later,
 the **caller** needs to use `let` outside of the `try` block to then assign it
 from within.
@@ -156,18 +151,16 @@ import { fn, NotFoundError } from "./fn";
 
 let value: string | undefined = undefined;
 try {
-    value = fn();
+  value = fn();
 } catch (e) {
-    if (e instanceof NotFoundError) {
-        ...
-    }
+  if (e instanceof NotFoundError) {
+    ...
+  }
 }
 
 console.log(value);
             ^ // string | undefined
 ```
-
-
 
 This "simple" function:
 
@@ -194,17 +187,15 @@ human-friendly with `esresult`?
 import Result from "esresult";
 
 function fn(): Result<string, "NotFound" | "DatabaseQueryFailed"> {
-    if (condition)
-        return Result.error("NotFound");
-    if (condition)
-        return Result.error("DatabaseQueryFailed");
-    return Result(value);
+  if (condition) return Result.error("NotFound");
+  if (condition) return Result.error("DatabaseQueryFailed");
+  return Result(value);
 }
 ```
 
 - No need to import anything else but the `fn` itself.
 - No complications with let + try/catch to handle a particular error.
-- All error types can be seen via intellisense/autocompletion.
+- All error types can be seen via intelli-sense/autocompletion.
 - Ergonomically handle error cases and default value behaviours.
 
 ```ts
@@ -221,8 +212,6 @@ const value = $value.orUndefined();
       ^ // string | undefined
 ```
 
-
-
 And if the function doesn't have any known error cases yet (as part of its
 signature), you can access the successful value directly, without needing to
 check `error` (it will always be `undefined`).
@@ -231,14 +220,12 @@ check `error` (it will always be `undefined`).
 import Result from "esresult";
 
 function fn(): Result<string> {
-    return Result(value);
+  return Result(value);
 }
 
 const [value] = fn();
        ^ // string
 ```
-
-
 
 And once you add (or remove) an error case, TypeScript will be able let you
 know.
@@ -247,9 +234,9 @@ know.
 import Result from "esresult";
 
 function fn(): Result<string, "Invalid"> {
-    if (isInvalid)
-        return Result.error("Invalid");
-    return Result(value);
+  if (isInvalid)
+    return Result.error("Invalid");
+  return Result(value);
 }
 
 const [value] = fn();
@@ -263,9 +250,7 @@ const [value] = fn();
 `esresult` default exports `Result`, which is both a Type and a Function, as
 explained below.
 
-
-
-**`Result` is a type generic** that accepts `Value` and  `Error` type parameters
+**`Result` is a type generic** that accepts `Value` and `Error` type parameters
 to create a [discriminable
 union](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#discriminated-unions)
 of:
@@ -275,9 +260,7 @@ of:
 - An "Error" Result,
   - which will **always** have a **non-`undefined`** `.error` property,
   - and **does not have a `.value` property**, therefore an "Ok" Result **must
-  be narrowed/discriminated first**.
-
-
+    be narrowed/discriminated first**.
 
 This means that checking for the **truthiness** of `.error` will easily
 discriminate between "Ok" and "Error" Results.
@@ -287,25 +270,19 @@ discriminate between "Ok" and "Error" Results.
 - Vice versa, if **`never`** is given for `Result`'s `Error` parameter, only a
   union of "Value" is produced.
 
-
-
 **`Result` is a function that produces an "Ok" Result object**, whereby `Error`
 is `never`.
 
 **`Result.error` is a function that produces an "Error" Result object**, whereby
 `Value` is `never`.
 
-
-
 "Error" Result's can also contain `.meta` data about the error (e.g. current
 iteration index/value, failed input string, etc.).
 
 - An Error's `meta` type can be defined via a tuple: `Result<never, ["MyError",
-  { foo: string }]>`
+{ foo: string }]>`
 - An "Error" Result object can be instantiated similarly:
   `Result.error(["MyError", { foo: "bar" }]);`
-
-
 
 `esresult` works with simple objects as returned by `Result` and `Result.error`,
 of which follow a simple prototype chain:
@@ -313,8 +290,6 @@ of which follow a simple prototype chain:
 - "Ok" Result object has, `Result.prototype` -> `Object.prototype`
 - "Error" Result object has, `ResultError.prototype` -> `Result.prototype` ->
   `Object.prototype`
-
-
 
 The `Result.prototype` defines methods such as `or()`, `orUndefined()`, and
 `orThrow()`.
@@ -335,20 +310,20 @@ How does `esresult` compare to other result/error handling libraries?
     complexity in favour of native TypeScript control flow.
 
 |                                    | esresult            | [neverthrow](https://github.com/supermacro/neverthrow) | [node-verror](https://github.com/joyent/node-verror) | [@badrap/result](https://github.com/badrap/result) | [type-safe-errors](https://github.com/wiktor-obrebski/type-safe-errors) | [space-monad](https://github.com/AlexGalays/space-monad) | [typescript-monads](https://github.com/patrickmichalina/typescript-monads) | [monads](https://github.com/sniptt-official/monads/tree/main/lib/result) | [ts-pattern](https://github.com/gvergnaud/ts-pattern) | [boxed](https://github.com/swan-io/boxed) |
-| ---------------------------------- | ------------------- | ------------------------------------------------------ | ---------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ | ----------------------------------------------------- | ----------------------------------------- |
-| Result discrimination              | **.error**          | .isOk() .isErr()                                       | N/A                                                  | .isOk .isErr                                       | as inferred                                                  | .isOk()  .isResult($)                                    | .isOk() .isErr()                                             | .isOk() .isErr()                                             | as inferred                                           | .isOk() .isErr()                          |
-| Free value access if no error def. | **YES**             | No                                                     | N/A                                                  | No (must always discriminate; for errors too!)     | **YES**                                                      | No                                                       | No                                                           | No                                                           | **YES**                                               | No                                        |
-| Error shapes (type/meta)           | **YES**             | No                                                     | **YES**                                              | No (forces of type `Error`)                        | No (encourages error instances)                              | No                                                       | No                                                           | No                                                           | No                                                    | No                                        |
-| Error causal chaining              | **YES**             | No                                                     | **YES**                                              | No                                                 | No                                                           | No                                                       | No                                                           | No                                                           | No                                                    | No                                        |
-| Error type autocomplete            | **YES**             | No                                                     | No (relies on throwing)                              | No                                                 | **YES** (standard inferred)                                  | No                                                       | No                                                           | No                                                           | **YES** (standard inferred)                           | No                                        |
-| Wrap unsafe functions              | **YES**             | **YES**                                                | N/A                                                  | No                                                 | No                                                           | No                                                       | No                                                           | No                                                           | N/A                                                   | No                                        |
-| Execute one-off unsafe functions   | **YES**             | No                                                     | N/A                                                  | No                                                 | No                                                           | No                                                       | No                                                           | No                                                           | N/A                                                   | No                                        |
-| Async types                        | **YES**             | **YES**                                                | N/A                                                  | No                                                 | No                                                           | No                                                       | No                                                           | No                                                           | N/A                                                   | No                                        |
-| Wrap unsafe async functions        | **YES**             | **YES**                                                | N/A                                                  | No                                                 | No                                                           | No                                                       | No                                                           | No                                                           | N/A                                                   | No                                        |
-| value access                       | **or, orUndefined** | map, mapErr, orElse (not type restricted)              | N/A                                                  | unwrap (could throw if not verbose)                | map, mapErr                                                  | map, orElse                                              | unwrap unwrapOr                                              | unwrap (throws), unwrapOr                                    | N/A                                                   | match (not type restricted)               |
-| orThrow (panic)                    | **YES**             | No                                                     | N/A                                                  | **"**                                              | No                                                           | No                                                       | No                                                           | No                                                           | **YES**, (exhaustive)                                 | No                                        |
-<br/>
+| ---------------------------------- | ------------------- | ------------------------------------------------------ | ---------------------------------------------------- | -------------------------------------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ----------------------------------------------------- | ----------------------------------------- |
+| Result discrimination              | **.error**          | .isOk() .isErr()                                       | N/A                                                  | .isOk .isErr                                       | as inferred                                                             | .isOk() .isResult($)                                     | .isOk() .isErr()                                                           | .isOk() .isErr()                                                         | as inferred                                           | .isOk() .isErr()                          |
+| Free value access if no error def. | **YES**             | No                                                     | N/A                                                  | No (must always discriminate; for errors too!)     | **YES**                                                                 | No                                                       | No                                                                         | No                                                                       | **YES**                                               | No                                        |
+| Error shapes (type/meta)           | **YES**             | No                                                     | **YES**                                              | No (forces of type `Error`)                        | No (encourages error instances)                                         | No                                                       | No                                                                         | No                                                                       | No                                                    | No                                        |
+| Error causal chaining              | **YES**             | No                                                     | **YES**                                              | No                                                 | No                                                                      | No                                                       | No                                                                         | No                                                                       | No                                                    | No                                        |
+| Error type autocomplete            | **YES**             | No                                                     | No (relies on throwing)                              | No                                                 | **YES** (standard inferred)                                             | No                                                       | No                                                                         | No                                                                       | **YES** (standard inferred)                           | No                                        |
+| Wrap unsafe functions              | **YES**             | **YES**                                                | N/A                                                  | No                                                 | No                                                                      | No                                                       | No                                                                         | No                                                                       | N/A                                                   | No                                        |
+| Execute one-off unsafe functions   | **YES**             | No                                                     | N/A                                                  | No                                                 | No                                                                      | No                                                       | No                                                                         | No                                                                       | N/A                                                   | No                                        |
+| Async types                        | **YES**             | **YES**                                                | N/A                                                  | No                                                 | No                                                                      | No                                                       | No                                                                         | No                                                                       | N/A                                                   | No                                        |
+| Wrap unsafe async functions        | **YES**             | **YES**                                                | N/A                                                  | No                                                 | No                                                                      | No                                                       | No                                                                         | No                                                                       | N/A                                                   | No                                        |
+| value access                       | **or, orUndefined** | map, mapErr, orElse (not type restricted)              | N/A                                                  | unwrap (could throw if not verbose)                | map, mapErr                                                             | map, orElse                                              | unwrap unwrapOr                                                            | unwrap (throws), unwrapOr                                                | N/A                                                   | match (not type restricted)               |
+| orThrow (panic)                    | **YES**             | No                                                     | N/A                                                  | **"**                                              | No                                                                      | No                                                       | No                                                                         | No                                                                       | **YES**, (exhaustive)                                 | No                                        |
 
+<br/>
 
 # Installation
 
@@ -424,7 +399,6 @@ const valueOrUndefined = fn().orUndefined();
   - Don't use `.orThrow` with try/catch blocks as this defeats the purpose of
     the `Result` object itself.
 
-
 ```ts
 const value = fn().orThrow();
 ```
@@ -438,8 +412,7 @@ const value = fn().orThrow();
 
 ```ts
 const $ = fn();
-if ($.error)
-  return Result.error("FnFailed", { cause: $ })
+if ($.error) return Result.error("FnFailed", { cause: $ });
 
 const [value] = $;
 ```
@@ -474,7 +447,6 @@ if ($.error) {
 - You can add typed `meta` information to allowing callers to parse more from
   your error.
   - Provide a tuple with the error type and the meta type/shape to use.
-
 
 ```ts
 function fn(): Result<
@@ -530,7 +502,7 @@ const value = $.or("default");
 const value = $.orUndefined();
 
 if ($.error) {
-    return;
+  return;
 }
 
 const [value] = $;
@@ -550,13 +522,13 @@ const [value] = $;
 
 ```ts
 function main(): Result<string, "FooFailed"> {
-    const $foo = fn();
-          ^ // ? Returns a Result that may be an error.
+  const $foo = fn();
+        ^ // ? Returns a Result that may be an error.
 
-    if ($foo.error)
-        return Result.error("FooFailed", { cause: $foo });
+  if ($foo.error)
+    return Result.error("FooFailed", { cause: $foo });
 
-    return Result(value);
+  return Result(value);
 }
 ```
 
